@@ -33,6 +33,19 @@
   const $ = s => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const cap = (id = E.nodo) => CAPITULOS[id];
+  /* Pone el ícono real de la ficha al lado de cada palabra clave (solo en texto, nunca dentro de etiquetas). */
+  const ICONOS = [[/\b(Heroicas?)\b/g, "heroica"], [/\b(Movimiento)\b/g, "mover"], [/\b(Ataques?)\b/g, "atacar"],
+    [/\b(Comod(?:ín|ines))(?![a-záéíóúñ])/g, "comodin"], [/\b(Matón|Matones)(?![a-záéíóúñ])/g, "maton"], [/\b(Civiles|Civil)\b/g, "civil"],
+    [/\b(Exposición)(?![a-záéíóúñ])/g, "exposicion"], [/\b(Periodistas?)\b/g, "periodista"]];
+  const conIconos = texto => ICONOS.reduce((t, [re, img]) => t.replace(re, `$1<img class="ic-linea" src="assets/icons/${img}.png" alt="">`), texto);
+  const icoHtml = html => html.replace(/>([^<]+)</g, (m, t) => ">" + conIconos(t) + "<");
+  const ico = t => conIconos(esc(t));
+  const icoSalvo = html => html.split(/(<ul class="leyenda-fichas">[\s\S]*?<\/ul>|<div class="iconos"[\s\S]*?<\/div>)/).map((p, i) => i % 2 ? p : icoHtml(p)).join("");
+  const accionDePremio = premio => {
+    let t = premio.includes(": ") ? premio.slice(premio.indexOf(": ") + 2) : premio;
+    t = t.replace(/^en el próximo capítulo, /, "").replace(/^en el final, /, "").replace(" del próximo capítulo", "");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
 
   /* ---------- Condiciones de texto ---------- */
   function cumple(x) {
@@ -87,7 +100,12 @@
     if (["rhino", "venom", "carnage"].includes(c.villano)) pasos.push({ t: "Fichas de Crisis", d: "Tenlas a mano (vienen en la caja X-Men)." });
     if (c.identidad) {
       const exp = equipo.filter(h => (E.exposicion[h] || 0) > 0 && !E.publicos.includes(h));
-      pasos.push({ t: "Identidad Secreta", d: `Coloca 1 Periodista en ${L(0)}, ${L(2)} y ${L(4)}.${exp.length ? " Exposición que arrastran: " + exp.map(h => `${HEROES[h].nombre} ${E.exposicion[h]}`).join(", ") + "." : ""}` });
+      pasos.push({ t: "Desafío Identidad Secreta", d: [
+        `Coloca 1 Periodista (la credencial amarilla) en ${L(0)}, ${L(2)} y ${L(4)}.`,
+        "Qué es: los Periodistas vigilan a los héroes. Si un héroe hace cualquier acción que no sea Mover en un Lugar con Periodista, toma 1 ficha de Exposición boca arriba y la deja junto a su mazo (máximo 1 por turno).",
+        "Con 3 Exposiciones su identidad se revela: recibe 1 daño y juega su próxima carta boca abajo (no hace nada, pero el compañero siguiente sí usa sus iconos).",
+        "Para alejar a la prensa, cualquier héroe puede gastar 1 acción Heroica y mover un Periodista a un Lugar vecino (si sale de su propio Lugar, se expone igual)."
+      ].concat(exp.length ? ["Exposición que arrastran de capítulos anteriores: " + exp.map(h => `${HEROES[h].nombre} ${E.exposicion[h]}`).join(", ") + " (pónganla boca arriba junto a su mazo)."] : []), lista: true });
     }
     const ev = lineas(c.evento.efectos);
     pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
@@ -95,7 +113,7 @@
       "Toma 2 fichas de Exposición (las del celular, de la caja Spider-Verse).",
       `Pon una boca abajo (mostrando la carcasa negra) sobre la carta de ${LUGARES[c.pistas.lugares[0]].nombre} y la otra sobre la de ${LUGARES[c.pistas.lugares[1]].nombre}, al costado, sin tapar los espacios de Civiles y Matones.`,
       "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger ese objetivo y dejarlo junto a su mazo. Esa acción no cuenta para ninguna Misión.",
-      "Al terminar, anoten en Partida cuántos recogieron. Si recogen los dos, cumplen el reto y el villano del próximo capítulo empieza Frenado."
+      `Si recogen los dos, cumplen el reto. Premio: ${c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1)}`
     ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: los objetivos del reto van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []), lista: true, carta: "pistas" });
     const nv = nivelDe(c);
     pasos.push({ t: `Desafío: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
@@ -109,10 +127,9 @@
     if (dificultad().id === "facil") fichas.push("Dificultad Fácil: cada héroe, 1 ficha Comodín.");
     E.pendientes.forEach(p => fichas.push(`${p.de}: ${p.texto}`));
     if (c.final && E.panico <= 1) fichas.push("La ciudad confía en ustedes: cada héroe, 1 ficha Comodín.");
-    if (fichas.length) pasos.push({ t: "Fichas iniciales", d: fichas, lista: true });
+    if (fichas.length) pasos.push({ t: "Ventajas y fichas iniciales", d: fichas, lista: true });
 
     const ritmo = [];
-    if (E.frenado) ritmo.push("Cumplieron el reto del capítulo anterior: el villano empieza Frenado (ficha verde sobre su mazo).");
     if (dificultad().id === "facil") ritmo.push("Dificultad Fácil: el villano empieza Frenado.");
     if (E.panico >= 2) ritmo.push(`Pánico (${estadoPanico(E.panico).nombre}): coloca 1 Matón extra en ${L(0)}.`);
     if (E.panico >= 4) ritmo.push("Pánico (Caos): el villano empieza Acelerado (ficha naranja al final de la Trama). Si también está Frenado, se anulan.");
@@ -178,7 +195,8 @@
       const H = HEROES[h], nh = nivelHeroe(h);
       return `<article class="heroe-sel ${mapa[h] === -1 ? "fuera" : ""}">${retrato(h)}
         <div class="heroe-sel-txt"><span class="etq">${esc(H.rol)}${nh > 1 ? ` · Nivel ${nh}` : ""}</span><h4>${esc(H.nombre)}</h4>${iconos(H)}
-        ${E.heridos.includes(h) ? `<span class="chip chip-mal">Herido</span>` : ""}
+        ${nh > 1 ? `<span class="veterano">Empieza con 1 ficha ${ico(H.mejora.ficha)}${nh >= 3 ? ` y 1 ${ico("Comodín")}` : ""}</span>` : ""}
+        ${E.heridos.includes(h) ? `<span class="chip chip-mal">Herido: roba 2 cartas</span>` : ""}
         <div class="asignar" role="radiogroup" aria-label="Quién juega con ${esc(H.nombre)}">
           ${E.jugadores.map((j, i) => `<button class="chip ${mapa[h] === i ? "on" : ""}" data-asignar="${h}" data-j="${i}" aria-pressed="${mapa[h] === i}">${esc(j)}</button>`).join("")}
           <button class="chip ${mapa[h] === -1 ? "on" : ""}" data-asignar="${h}" data-j="-1" aria-pressed="${mapa[h] === -1}">No juega</button>
@@ -194,16 +212,16 @@
       <div class="equipo">${hs.map(tarjeta).join("")}</div></section>
     <section class="bloque"><h3 class="titulo-sec">Cartas del capítulo</h3>
       <div class="cartas">
-        <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${esc(x)}</li>`).join("")}</ul></article>
+        <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${ico(x)}</li>`).join("")}</ul></article>
         <article class="carta carta-pistas"><span class="carta-tipo">Carta de Reto</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
           <ol class="carta-pasos">
-            <li><b>Preparar:</b> pon 1 ficha de Exposición (el celular) boca abajo sobre ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
+            <li><b>Preparar:</b> pon 1 ficha de Exposición <img class="ic-linea" src="assets/icons/pista.png" alt=""> boca abajo sobre ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
             <li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt="Heroica"> y recoge ese objetivo. No cuenta para las Misiones.</li>
-            <li><b>Premio:</b> si recogen los dos, el villano del próximo capítulo empieza Frenado.</li>
+            <li><b>Premio:</b> si recogen los dos, ${ico(c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1))}</li>
           </ol></article>
       </div></section>
     <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
-      <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<span>${esc(s.d)}</span>`}</li>`).join("")}</ol></section>
+      <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${ico(x)}</li>`).join("")}</ul>` : `<span>${ico(s.d)}</span>`}</li>`).join("")}</ol></section>
     <div class="cta"><button class="btn" id="btnEmpezar">Mesa lista: empezar la partida</button></div>`;
   }
 
@@ -223,22 +241,10 @@
     return `
     <section class="mesa-villano"><img src="assets/char/${c.villano}.jpg" alt="">
       <div class="mv-txt"><span class="etq">${esc(c.titulo)}</span><h2>${esc(v.nombre)}</h2><span class="estado-v">${v.complot === "No tiene." ? "Sin complot maligno: pierden si se acaba su Plan Maestro o un héroe se queda sin cartas." : "Complot: " + esc(v.complot)}</span></div></section>
-    <section class="bloque"><h3 class="titulo-sec">Recordatorio</h3><ul class="avisos">${recordatorio.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>
-    <section class="bloque"><h3 class="titulo-sec">Al terminar</h3>
-      <p class="nota">Completen esto cuando la partida termine.</p>
-      <div class="mesa-heroes">${P.equipo.map(h => `<article class="mh">${retrato(h)}<div class="mh-txt"><h4>${esc(HEROES[h].nombre)}</h4>
-        ${c.identidad && !E.publicos.includes(h) ? `<div class="cont"><span>Exposición al final</span><button class="mini" data-exp="${h}" data-d="-1" aria-label="Restar">−</button><b class="${(P.exp[h] || 0) >= 3 ? "alerta" : ""}">${P.exp[h] || 0}</b><button class="mini" data-exp="${h}" data-d="1" aria-label="Sumar">+</button></div>` : ""}
-        <label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> Quedó fuera de combate</label></div></article>`).join("")}</div>
-      <h4 class="sub">Carta de Reto: objetivos recogidos</h4>
-      <div class="selector">
-        <button class="chip ${P.pistas === 2 ? "on" : ""}" data-pistas="2">Los dos</button>
-        <button class="chip ${P.pistas === 1 ? "on" : ""}" data-pistas="1">Solo uno</button>
-        <button class="chip ${P.pistas === 0 ? "on" : ""}" data-pistas="0">Ninguno</button>
-      </div></section>
+    <section class="bloque"><h3 class="titulo-sec">Recordatorio</h3><ul class="avisos">${recordatorio.map(x => `<li>${ico(x)}</li>`).join("")}</ul></section>
     <section class="bloque resolver"><h3 class="titulo-sec">¿Cómo terminó?</h3>
-      ${P.confirmar ? `<div class="confirma"><p>${P.confirmar === "gano" ? `¿Confirman que derrotaron a ${esc(v.nombre)}?` : "¿Confirman que el villano completó su plan?"}</p>
-        <div class="fila"><button class="btn" id="btnConfirmar">Sí, ${P.confirmar === "gano" ? "ganamos" : "perdimos"}</button><button class="btn-sec" id="btnCancelar">Volver</button></div></div>`
-      : `<div class="fila"><button class="btn verde" data-fin="gano">Ganamos</button><button class="btn rojo" data-fin="perdio">Perdimos</button></div>`}
+      <p class="nota">Al tocar un botón se abre una ventana con tres preguntas rápidas.</p>
+      <div class="fila"><button class="btn verde" data-fin="gano">Ganamos</button><button class="btn rojo" data-fin="perdio">Perdimos</button></div>
       <button class="btn-sec" id="btnAbandonar">Volver a preparar la mesa</button></section>`;
   }
 
@@ -247,7 +253,7 @@
     const R = E.resultado, c = cap(R.nodo), out = R.gano ? c.victoria : c.derrota;
     return `<section class="resultado ${R.gano ? "gano" : "perdio"}"><p class="sfx">${R.gano ? "¡Victoria!" : c.final ? "¡Otra vez!" : "Derrota"}</p><h2>${esc(out.titulo)}</h2></section>
     <section class="bloque"><div class="captions">${out.texto.map(t => caption(esc(t))).join("")}</div></section>
-    ${R.avisos.length ? `<section class="bloque"><h3 class="titulo-sec">Lo que cambia</h3><ul class="avisos">${R.avisos.map(a => `<li>${esc(a)}</li>`).join("")}</ul></section>` : ""}
+    ${R.avisos.length ? `<section class="bloque"><h3 class="titulo-sec">Lo que cambia</h3><ul class="avisos">${R.avisos.map(a => `<li>${ico(a)}</li>`).join("")}</ul></section>` : ""}
     <div class="cta"><button class="btn" id="btnSeguir">${R.gano && c.final ? "Ver el final" : c.final ? "Volver a intentarlo" : "Continuar la historia"}</button></div>`;
   }
 
@@ -256,7 +262,7 @@
     const nota = ult && d.notas ? d.notas[`${ult.nodo}:${ult.gano ? "gano" : "perdio"}`] : null;
     return `<section class="resultado decision-top"><p class="sfx sfx-chico">Decisión</p><h2>${esc(d.titulo)}</h2></section>
     <section class="bloque">${nota ? caption(esc(nota)) : ""}${caption(esc(d.texto))}
-      <div class="opciones">${d.opciones.map(o => `<button class="opcion ${E.decision.elegida === o.id ? "on" : ""}" data-decision="${o.id}" aria-pressed="${E.decision.elegida === o.id}"><b>${esc(o.nombre)}</b><span>${esc(o.texto)}</span></button>`).join("")}</div>
+      <div class="opciones">${d.opciones.map(o => `<button class="opcion ${E.decision.elegida === o.id ? "on" : ""}" data-decision="${o.id}" aria-pressed="${E.decision.elegida === o.id}"><b>${esc(o.nombre)}</b><span>${ico(o.texto)}</span></button>`).join("")}</div>
       <p class="nota">La decisión es definitiva: piénsenla juntos.</p></section>
     <div class="cta"><button class="btn" id="btnDecidir" ${E.decision.elegida ? "" : "disabled"}>Confirmar la decisión</button></div>`;
   }
@@ -381,15 +387,15 @@
   /* ---------- Acciones ---------- */
   function empezar() {
     const c = cap(), equipo = equipoJugando();
-    E.partida = { nodo: E.nodo, equipo, exp: {}, ko: {}, pistas: null, confirmar: null, consumidos: { ayuda: E.ayuda, frenado: E.frenado, pendientes: E.pendientes.slice() } };
+    E.partida = { nodo: E.nodo, equipo, exp: {}, ko: {}, cierre: null, consumidos: { ayuda: E.ayuda, pendientes: E.pendientes.slice() } };
     if (c.identidad) equipo.forEach(h => { if (!E.publicos.includes(h)) E.partida.exp[h] = E.exposicion[h] || 0; });
     E.heridos = E.heridos.filter(h => !equipo.includes(h));
-    E.ayuda = false; E.frenado = false; E.pendientes = [];
+    E.ayuda = false; E.pendientes = [];
     E.fase = "juego"; guardar(); ir("partida");
   }
   function abandonar() {
     const P = E.partida;
-    if (P) { E.ayuda = P.consumidos.ayuda; E.frenado = P.consumidos.frenado; E.pendientes = P.consumidos.pendientes; }
+    if (P) { E.ayuda = P.consumidos.ayuda; E.pendientes = P.consumidos.pendientes; }
     E.partida = null; E.fase = "prep"; guardar(); ir("historia");
   }
 
@@ -397,7 +403,7 @@
     (lista || []).forEach(ef => {
       if (ef.panico) { const a = E.panico; E.panico = clamp(E.panico + ef.panico, 0, 5); if (E.panico !== a) avisos.push(`El Pánico en Nueva York ${ef.panico > 0 ? "sube" : "baja"} a ${E.panico}.`); }
       if (ef.flag) E.flags[ef.flag] = ef.valor;
-      if (ef.carnage) { E.carnage += ef.carnage; avisos.push(`Carnage se hace más fuerte: su medidor empezará en ${clamp(E.carnage, 0, 3)} en el final.`); }
+      if (ef.carnage) { E.carnage = Math.max(0, E.carnage + ef.carnage); avisos.push(`${ef.carnage > 0 ? "Carnage se hace más fuerte" : "Carnage se debilita"}: su medidor empezará en ${clamp(E.carnage, 0, 3)} en el final.`); }
       if (ef.panicoSi && E.flags[ef.panicoSi.flag] === ef.panicoSi.valor) { E.panico = clamp(E.panico + ef.panicoSi.n, 0, 5); avisos.push(`El Pánico en Nueva York sube a ${E.panico}.`); }
     });
   }
@@ -416,14 +422,31 @@
       P.equipo.forEach(h => { if (P.ko[h] && !E.heridos.includes(h)) { E.heridos.push(h); avisos.push(`${HEROES[h].nombre} quedó herido: robará 2 cartas la próxima vez que juegue.`); } });
       E.ayuda = true; avisos.push("La alianza se reagrupa: en el próximo capítulo cada héroe empieza con 1 Comodín.");
     }
-    if (P.pistas === 2) {
+    if (P.cierre.reto) {
       if (c.final) E.flags.pistasFinal = true;
-      else { E.frenado = true; avisos.push(`Cumplieron el reto «${c.pistas.titulo}»: el próximo villano empieza Frenado.`); }
+      else if (c.pistas.premioEfectos) { avisos.push(`Cumplieron el reto «${c.pistas.titulo}».`); aplicarEfectos(c.pistas.premioEfectos, avisos); }
+      else { E.pendientes.push({ de: `Premio del reto «${c.pistas.titulo}»`, texto: accionDePremio(c.pistas.premio) }); avisos.push(`Cumplieron el reto «${c.pistas.titulo}». Premio para el próximo capítulo: ${accionDePremio(c.pistas.premio)}`); }
     }
     aplicarEfectos(out.efectos, avisos);
     E.historia.push({ nodo: E.nodo, gano, equipo: P.equipo, resumen: out.resumen, fecha: new Date().toISOString() });
     E.resultado = { nodo: E.nodo, gano, avisos, siguiente: out.siguiente, trasDecision: out.siguienteTrasDecision || null };
     E.partida = null; E.fase = "resultado"; guardar(); ir("historia");
+  }
+
+  function abrirCierre() {
+    const P = E.partida, c = cap(P.nodo), K = P.cierre, gano = K.res === "gano";
+    $("#modal").innerHTML = `<div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="cierreT">
+      <p class="sfx sfx-chico">${gano ? "¡Ganamos!" : "Perdimos"}</p>
+      <h3 id="cierreT">Antes de seguir la historia</h3>
+      <div class="pregunta"><b>1. Carta de Reto «${esc(c.pistas.titulo)}»: ¿recogieron los dos objetivos?</b>
+        <div class="fila"><button class="chip ${K.reto === true ? "on" : ""}" data-reto="si">Sí, completamos el reto</button><button class="chip ${K.reto === false ? "on" : ""}" data-reto="no">No</button></div></div>
+      ${gano ? "" : `<div class="pregunta"><b>2. ¿Quién quedó fuera de combate al menos una vez?</b><span class="nota">Se marcarán heridos para su próxima partida.</span>
+        ${P.equipo.map(h => `<label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> ${esc(HEROES[h].nombre)}</label>`).join("")}</div>`}
+      ${c.identidad ? `<div class="pregunta"><b>${gano ? 2 : 3}. ¿Cuánta ${ico("Exposición")} tiene cada héroe al final?</b>
+        ${P.equipo.filter(h => !E.publicos.includes(h)).map(h => `<div class="cont"><span>${esc(HEROES[h].nombre)}</span><button class="mini" data-exp="${h}" data-d="-1" aria-label="Restar">−</button><b>${P.exp[h] || 0}</b><button class="mini" data-exp="${h}" data-d="1" aria-label="Sumar">+</button></div>`).join("")}</div>` : ""}
+      <div class="fila"><button class="btn ${gano ? "verde" : "rojo"}" id="btnCerrarPartida" ${K.reto === null ? "disabled" : ""}>Confirmar y ver qué pasa</button><button class="btn-sec" id="btnCancelarCierre">Volver</button></div>
+      ${K.reto === null ? `<p class="nota">Responde la pregunta del reto para continuar.</p>` : ""}</div>`;
+    $("#modal").hidden = false;
   }
 
   function irA(destino, trasDecision) {
@@ -457,7 +480,8 @@
   function ir(v) { vista = v; render(); window.scrollTo(0, 0); }
   function render() {
     const vistas = { historia: vistaHistoria, partida: vistaPartida, mapa: vistaMapa, archivo: vistaArchivo, campana: vistaCampana };
-    $("#vista").innerHTML = vistas[vista]();
+    const html = vistas[vista]();
+    $("#vista").innerHTML = vista === "archivo" ? icoSalvo(html) : html;
     document.querySelectorAll(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ir === vista ? "page" : "false"));
     const jugadas = E.historia.filter(h => h.nodo !== "F").length;
     $("#capActual").textContent = E.fase === "fin" ? "Campaña terminada" : `Capítulo ${Math.min(jugadas + 1, 10)} de 10`;
@@ -476,11 +500,11 @@
     }
     if (t.id === "btnEmpezar") return empezar();
     const P = E.partida;
-    if (d.exp && P) { P.exp[d.exp] = clamp((P.exp[d.exp] || 0) + Number(d.d), 0, 3); guardar(); return render(); }
-    if (d.pistas && P) { P.pistas = Number(d.pistas); guardar(); return render(); }
-    if (d.fin && P) { P.confirmar = d.fin; guardar(); return render(); }
-    if (t.id === "btnCancelar" && P) { P.confirmar = null; guardar(); return render(); }
-    if (t.id === "btnConfirmar" && P) return terminar(P.confirmar === "gano");
+    if (d.exp && P) { P.exp[d.exp] = clamp((P.exp[d.exp] || 0) + Number(d.d), 0, 3); guardar(); return abrirCierre(); }
+    if (d.fin && P) { P.cierre = { res: d.fin, reto: null }; guardar(); return abrirCierre(); }
+    if (d.reto && P && P.cierre) { P.cierre.reto = d.reto === "si"; guardar(); return abrirCierre(); }
+    if (t.id === "btnCancelarCierre" && P) { P.cierre = null; guardar(); $("#modal").hidden = true; return; }
+    if (t.id === "btnCerrarPartida" && P && P.cierre && P.cierre.reto !== null) { $("#modal").hidden = true; return terminar(P.cierre.res === "gano"); }
     if (t.id === "btnAbandonar") return abandonar();
     if (t.id === "btnSeguir") return seguir();
     if (d.decision && E.decision) { E.decision.elegida = d.decision; guardar(); return render(); }

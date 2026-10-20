@@ -409,3 +409,12 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 .leyenda-fichas { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 65ch; }
 .leyenda-fichas li { display: flex; gap: 10px; align-items: center; }
 .leyenda-fichas img, .ficha-txt-ic { width: 40px; height: 34px; object-fit: contain; flex: none; text-align: center; font-size: 1.5rem; }
+
+/* ---------- v3: modal de cierre y veterano ---------- */
+.veterano { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 4px 8px; background: rgba(87, 199, 236, .1); border: 1px solid var(--cian); border-radius: 6px; font: 600 .82rem/1.2 var(--f-titulo); color: var(--texto); align-self: flex-start; }
+.pregunta { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--tinta-2); border: 1px solid var(--linea); border-radius: 6px; }
+.pregunta > b { font: 700 1rem/1.25 var(--f-titulo); }
+.pregunta .fila > .chip { flex: 1 1 120px; padding: 12px; font-size: .95rem; }
+.modal { overflow-y: auto; }
+.modal-caja { max-height: none; margin-block: auto; }
+.btn:disabled, .btn.verde:disabled, .btn.rojo:disabled { background: #4a4f68; color: #9aa0b8; cursor: not-allowed; box-shadow: none; }

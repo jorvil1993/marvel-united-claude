@@ -205,7 +205,7 @@ const CAPITULOS = {
     "Peter, Miles y Felicia salen por la ventana antes de que la tía May termine de preguntar adónde van. Alguien le pagó a Rhino el triple por sacar un solo contenedor, y Felicia quiere saber quién."
   ],
   evento: { titulo: "Puerta derribada", texto: "Rhino lleva diez minutos adentro cuando ustedes llegan.", efectos: ["Coloca 1 Matón extra en Oscorp Tower (cabe: Oscorp tiene 2 espacios libres al empezar)."] },
-  pistas: { titulo: "El comprador", texto: "Felicia quiere saber quién contrató a Rhino. Hay rastros del comprador en el laboratorio de Osborn y en el camión del puente.", lugares: ["osborn-labs", "brooklyn-bridge"] },
+  pistas: { titulo: "El comprador", texto: "Felicia quiere saber quién contrató a Rhino. Hay rastros del comprador en el laboratorio de Osborn y en el camión del puente.", lugares: ["osborn-labs", "brooklyn-bridge"] , premio: "Ya saben quién pagó el robo y cómo piensa: en el próximo capítulo, miren las 3 primeras cartas del Plan Maestro y ordénenlas como quieran." },
   victoria: {
     titulo: "Contenedor recuperado",
     texto: [
@@ -244,8 +244,8 @@ const CAPITULOS = {
     "Ahora Eddie ya no está solo. La mitad de la Muestra 7 lo encontró en el estacionamiento y se le metió bajo la piel. Juntos se llaman Venom, y esta mañana tomaron el Daily Bugle con todos adentro. Quieren que Jameson imprima en primera plana quién es Spider-Man.",
     "Jessica Drew, Spider-Woman, agente de S.H.I.E.L.D., rastrea la muestra desde que bajó del espacio. Encuentra a Peter y a Felicia revisando la bóveda vacía de Oscorp. «Esa cosa ya eligió a alguien», les dice. «Y por lo que veo, te conoce, Parker.»"
   ],
-  evento: { titulo: "Edición extra", texto: "Jameson manda a todos sus reporteros a cubrir el secuestro de su propio periódico.", efectos: ["Desafío Identidad Secreta activo.", "Hay rehenes en la redacción: coloca 1 Civil extra en Daily Bugle."] },
-  pistas: { titulo: "La debilidad", texto: "Jessica sospecha que el simbionte odia el ruido. Necesitan dos fuentes de sonido potentes: el auditorio de Midtown y los amplificadores de la banda de Queens.", lugares: ["midtown-high", "queens"] },
+  evento: { titulo: "Edición extra", texto: "Jameson manda a todos sus reporteros a cubrir el secuestro de su propio periódico.", efectos: ["Desafío Identidad Secreta: la prensa vigila. Se ponen 3 Periodistas en la mesa y cada héroe que actúe cerca de ellos acumula Exposición; con 3, su identidad se revela (lo explica el paso «Desafío Identidad Secreta» de la preparación).", "Hay rehenes en la redacción: coloca 1 Civil extra en Daily Bugle."] },
+  pistas: { titulo: "La debilidad", texto: "Jessica sospecha que el simbionte odia el ruido. Necesitan dos fuentes de sonido potentes: el auditorio de Midtown y los amplificadores de la banda de Queens.", lugares: ["midtown-high", "queens"] , premio: "Tienen el equipo de sonido listo para usarlo de nuevo: en el próximo capítulo, cada héroe empieza con 1 ficha de Ataque." },
   victoria: {
     titulo: "Eddie despierta",
     texto: [
@@ -285,7 +285,7 @@ const CAPITULOS = {
     "Jessica Drew llega a Queens con malas noticias: Rhino entregó el contenedor y Creed salió de Oscorp Tower hace una hora. Por la radio de la policía se oye una voz ronca que se ríe: «Huele a gato.»"
   ],
   evento: { titulo: "La presa", texto: "Creed ya sabe dónde duerme Felicia.", efectos: ["Black Cat empieza la partida y recibe la ficha de Cazado.", "La tía May está en casa: coloca 1 Civil extra en Queens."] },
-  pistas: { titulo: "El rastro del contenedor", texto: "Si siguen el camión de Rhino, sabrán dónde terminó la Muestra 7. Quedan huellas en el puente y en el laboratorio de Osborn.", lugares: ["brooklyn-bridge", "osborn-labs"] },
+  pistas: { titulo: "El rastro del contenedor", texto: "Si siguen el camión de Rhino, sabrán dónde terminó la Muestra 7. Quedan huellas en el puente y en el laboratorio de Osborn.", lugares: ["brooklyn-bridge", "osborn-labs"] , premio: "Saben adónde fue la muestra y llegan antes: el villano del próximo capítulo empieza Frenado (ficha verde sobre su mazo)." },
   victoria: {
     titulo: "Gato salvaje",
     texto: [
@@ -325,7 +325,7 @@ const CAPITULOS = {
     "Peter quedó molido después de pelear con Venom, así que Miles va al frente. Cuando llegan, el colisionador ya está encendido: el cielo sobre Osborn Laboratories se abre en grietas de colores. De una cae una chica con capucha blanca. Detrás de ella aterriza, de cabeza, un cerdo con antifaz."
   ],
   evento: { titulo: "Grietas en el cielo", texto: "Gwen Stacy (Ghost-Spider) y Peter Porker (Spider-Ham) se unen desde el principio. Por las grietas también cruzan matones de otros mundos.", efectos: ["Coloca 1 Matón extra en Osborn Laboratories."] },
-  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] },
+  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] , premio: "La red eléctrica de Osborn quedó a su favor: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3." },
   victoria: {
     titulo: "La grieta se cierra",
     texto: [
@@ -366,7 +366,7 @@ const CAPITULOS = {
     "Jessica Drew guía a los recién llegados por los túneles. No son los únicos cazando: Osborn contrató a Sabretooth, y Creed ya olió a Jessica."
   ],
   evento: { titulo: "Olor a presa", texto: "Creed decide que la agente de S.H.I.E.L.D. es más divertida que el simbionte.", efectos: ["Spider-Woman empieza la partida y recibe la ficha de Cazado."] },
-  pistas: { titulo: "El rastro de Venom", texto: "Venom dejó gotas negras en su huida. Si las siguen antes que Creed, llegan primero a él.", lugares: ["oscorp-tower", "queens"] },
+  pistas: { titulo: "El rastro de Venom", texto: "Venom dejó gotas negras en su huida. Si las siguen antes que Creed, llegan primero a él.", lugares: ["oscorp-tower", "queens"] , premio: "Venom les debe una: en el próximo capítulo, un héroe que ustedes elijan empieza con 2 fichas Comodín." },
   victoria: {
     titulo: "El cazador cae al río",
     texto: [
@@ -406,8 +406,8 @@ const CAPITULOS = {
     "Osborn busca un universo donde alguien ya haya domado al simbionte, para copiar el método. Su fórmula del Duende le está comiendo la cabeza, y la masa del espacio sana todo lo que toca.",
     "Peter y Felicia entran por el túnel de servicio de Oscorp Tower. No saben que alguien más se coló esa noche: Eddie Brock, un fotógrafo despedido del Bugle que busca la foto que le devuelva su trabajo. Cuando el colisionador se sobrecarga, la Muestra 7 sale disparada directo hacia Eddie."
   ],
-  evento: { titulo: "Del otro lado", texto: "Una grieta se abre en medio del laboratorio y Gwen Stacy, Ghost-Spider, cae al lado de Peter. Se une desde el principio. Jameson ya mandó reporteros.", efectos: ["Desafío Identidad Secreta activo."] },
-  pistas: { titulo: "Las fotos de Eddie", texto: "Eddie fotografió el colisionador y el logo de Osborn. Si recuperan sus fotos, tendrán pruebas.", lugares: ["daily-bugle", "brooklyn-bridge"] },
+  evento: { titulo: "Del otro lado", texto: "Una grieta se abre en medio del laboratorio y Gwen Stacy, Ghost-Spider, cae al lado de Peter. Se une desde el principio. Jameson ya mandó reporteros.", efectos: ["Desafío Identidad Secreta: la prensa vigila. Se ponen 3 Periodistas en la mesa y cada héroe que actúe cerca de ellos acumula Exposición; con 3, su identidad se revela (lo explica el paso «Desafío Identidad Secreta» de la preparación)."] },
+  pistas: { titulo: "Las fotos de Eddie", texto: "Eddie fotografió el colisionador y el logo de Osborn. Si recuperan sus fotos, tendrán pruebas.", lugares: ["daily-bugle", "brooklyn-bridge"] , premio: "Las fotos de Eddie prueban todo y la gente confía en ustedes: en el próximo capítulo, rescaten 1 Civil de cualquier Lugar antes de empezar (cuenta para la Misión)." },
   victoria: {
     titulo: "Simbionte acorralado",
     texto: [
@@ -448,7 +448,7 @@ const CAPITULOS = {
     "Peter se queda en Queens cuidando a Felicia, y Miles guía a los recién llegados. Osborn sabía que vendrían: contrató a Cain Marko, el Juggernaut, para que nadie toque la máquina."
   ],
   evento: { titulo: "Ciudad agrietada", texto: "Miguel O'Hara y Spider-Ham ya están aquí y pelean desde el principio. Las grietas dejan pasar matones de otros mundos.", efectos: ["Coloca 1 Matón extra en Osborn Laboratories."] },
-  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] },
+  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] , premio: "Sin colisionador, Osborn pierde tiempo: el villano del próximo capítulo empieza Frenado (ficha verde sobre su mazo)." },
   victoria: {
     titulo: "Atrapado hasta el cuello",
     texto: [
@@ -493,7 +493,7 @@ const CAPITULOS = {
     { si: { eddie: "ravencroft" }, t: "Kelly abre su discurso con una foto de Eddie Brock entrando a Ravencroft: «Esto es lo que pasa cuando dejamos sueltos a los fenómenos.»" }
   ],
   evento: { titulo: "Cualquier cara", texto: "Mystique puede ser cualquiera del público.", efectos: ["Coloca 1 Civil extra en Midtown High."] },
-  pistas: { titulo: "El francotirador", texto: "Mystique no trabaja sola: un francotirador espera en Oscorp y un auto de escape en el puente. Si los neutralizan, encuentran quién pagó.", lugares: ["oscorp-tower", "brooklyn-bridge"] },
+  pistas: { titulo: "El francotirador", texto: "Mystique no trabaja sola: un francotirador espera en Oscorp y un auto de escape en el puente. Si los neutralizan, encuentran quién pagó.", lugares: ["oscorp-tower", "brooklyn-bridge"] , premio: "El teléfono del francotirador tiene el plan del enemigo: en el próximo capítulo, miren las 3 primeras cartas del Plan Maestro y ordénenlas como quieran." },
   victoria: {
     titulo: "Kelly sigue vivo",
     texto: [
@@ -537,7 +537,7 @@ const CAPITULOS = {
     { vio: "sabretooth", t: "Creed tiene cuentas pendientes con ustedes desde Nueva York. Esta vez vino preparado." }
   ],
   evento: { titulo: "Viejas heridas", texto: "Arma X huele al pasado de Logan, y Creed lo sabe.", efectos: ["Wolverine empieza la partida y recibe la ficha de Cazado.", "Coloca 1 Matón extra en Weapon X Facility."] },
-  pistas: { titulo: "Los archivos", texto: "Las cajas de archivos ya salieron hacia la avioneta y hacia el camión de Oscorp. Si las recuperan, sabrán todo el plan.", lugares: ["hangar-bay", "osborn-labs"] },
+  pistas: { titulo: "Los archivos", texto: "Las cajas de archivos ya salieron hacia la avioneta y hacia el camión de Oscorp. Si las recuperan, sabrán todo el plan.", lugares: ["hangar-bay", "osborn-labs"] , premio: "Los archivos de Arma X enseñan cómo pelea Osborn: en el próximo capítulo, cada héroe empieza con 1 ficha Heroica." },
   victoria: {
     titulo: "Garra contra garra",
     texto: [
@@ -580,7 +580,7 @@ const CAPITULOS = {
     { vio: "juggernaut", t: "Cain no olvidó a los que lo dejaron en ridículo en Nueva York." }
   ],
   evento: { titulo: "Los alumnos", texto: "Hay estudiantes atrapados en la escuela.", efectos: ["Coloca 1 Civil extra en Xavier Institute."] },
-  pistas: { titulo: "Sellar Cerebro", texto: "Si cierran las compuertas del hangar y preparan el X-Jet para evacuar, Cerebro queda sellado aunque Cain llegue al sótano.", lugares: ["hangar-bay", "x-jet"] },
+  pistas: { titulo: "Sellar Cerebro", texto: "Si cierran las compuertas del hangar y preparan el X-Jet para evacuar, Cerebro queda sellado aunque Cain llegue al sótano.", lugares: ["hangar-bay", "x-jet"] , premio: "La escuela queda blindada y los alumnos ayudan: en el próximo capítulo, derroten 1 Matón de cualquier Lugar antes de empezar (cuenta para la Misión)." },
   victoria: {
     titulo: "El casco",
     texto: [
@@ -623,7 +623,7 @@ const CAPITULOS = {
     "Hank se sienta frente a Cerebro con Jean. Gwen Stacy vigila la puerta. Desde Asteroid M empieza a llover metal sobre Westchester."
   ],
   evento: { titulo: "Conectados a Cerebro", texto: "Jean entra a Cerebro con Hank para borrar la lista antes que Erik.", efectos: ["Jean Grey empieza con 1 ficha Heroica."] },
-  pistas: { titulo: "Cortar la antena", texto: "Erik entra a Cerebro usando la vieja estación de los Centinelas como antena y ya mandó una copia de la lista a Genosha.", lugares: ["sentinel-station", "genosha"] },
+  pistas: { titulo: "Cortar la antena", texto: "Erik entra a Cerebro usando la vieja estación de los Centinelas como antena y ya mandó una copia de la lista a Genosha.", lugares: ["sentinel-station", "genosha"] , premio: "Sin antena, Magneto no puede espiar a nadie: en el próximo capítulo, cada héroe empieza con 1 ficha de Movimiento." },
   victoria: {
     titulo: "La lista a salvo",
     texto: [
@@ -666,7 +666,7 @@ const CAPITULOS = {
     { vio: "juggernaut", t: "Cain recuerda muy bien la última vez que se cruzaron." }
   ],
   evento: { titulo: "Ya entró", texto: "Juggernaut rompió el muro norte antes de que el X-Jet aterrizara.", efectos: ["Juggernaut empieza Acelerado (ficha naranja al final de la Trama)."] },
-  pistas: { titulo: "Sellar Cerebro", texto: "Las compuertas blindadas y el respaldo de Muir Island pueden proteger la lista aunque Cain llegue al sótano.", lugares: ["hangar-bay", "muir-island"] },
+  pistas: { titulo: "Sellar Cerebro", texto: "Las compuertas blindadas y el respaldo de Muir Island pueden proteger la lista aunque Cain llegue al sótano.", lugares: ["hangar-bay", "muir-island"] , premio: "Cerebro sigue a salvo y los vigila a todos: el villano del próximo capítulo empieza Frenado (ficha verde sobre su mazo)." },
   victoria: {
     titulo: "Un casco menos",
     texto: [
@@ -709,7 +709,7 @@ const CAPITULOS = {
     "Jean puede usar Cerebro a distancia para llegar a la mente de Erik, pero necesita tiempo. Hank prepara el X-Jet en Hangar Bay. Peter insiste en ir: «Si esa cosa cae sobre Washington, la próxima ley va a ser contra todos nosotros.»"
   ],
   evento: { titulo: "Refugiados", texto: "Erik dice que lo hace por los mutantes que se esconden en Genosha.", efectos: ["Coloca 1 Civil extra en Genosha."] },
-  pistas: { titulo: "Apagar los Centinelas", texto: "Los Centinelas se controlan desde Asteroid M y reciben órdenes de Cerebro. Si cortan las dos señales, no despiertan nunca.", lugares: ["asteroid-m", "xavier-institute"] },
+  pistas: { titulo: "Apagar los Centinelas", texto: "Los Centinelas se controlan desde Asteroid M y reciben órdenes de Cerebro. Si cortan las dos señales, no despiertan nunca.", lugares: ["asteroid-m", "xavier-institute"] , premio: "Los Centinelas duermen para siempre y la alianza respira: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3." },
   victoria: {
     titulo: "La estación se apaga",
     texto: [
@@ -753,7 +753,7 @@ const CAPITULOS = {
     { si: { eddie: "ravencroft" }, t: "Felicia Hardy vino con ellos: Osborn le debe una, y ella cobra sus deudas." }
   ],
   evento: { titulo: "La cacería", texto: "Creed vino por Logan antes que por nadie.", efectos: ["Wolverine empieza la partida y recibe la ficha de Cazado.", "Hay refugiados en la isla: coloca 1 Civil extra en Genosha."] },
-  pistas: { titulo: "Los escondidos", texto: "Dos grupos de refugiados se escondieron lejos de la playa. Si los encuentran antes que Creed, los sacan a todos.", lugares: ["asteroid-m", "hangar-bay"] },
+  pistas: { titulo: "Los escondidos", texto: "Dos grupos de refugiados se escondieron lejos de la playa. Si los encuentran antes que Creed, los sacan a todos.", lugares: ["asteroid-m", "hangar-bay"] , premio: "Los refugiados rescatados se suman a la evacuación: en el próximo capítulo, rescaten 2 Civiles de cualquier Lugar antes de empezar (cuentan para la Misión)." },
   victoria: {
     titulo: "La isla resiste",
     texto: [
@@ -802,7 +802,7 @@ const CAPITULOS = {
     { si: { evidencia: "secreta" }, t: "Llegaron antes que él: el Duende empieza Frenado (ficha verde sobre su mazo)." },
     "Coloca 1 Civil extra en Genosha."
   ] },
-  pistas: { titulo: "Los compatibles", texto: "Hay mutantes de la lista escondidos en el X-Jet averiado y en la estación abandonada. Si los sacan primero, el Duende se va con las manos vacías.", lugares: ["x-jet", "sentinel-station"] },
+  pistas: { titulo: "Los compatibles", texto: "Hay mutantes de la lista escondidos en el X-Jet averiado y en la estación abandonada. Si los sacan primero, el Duende se va con las manos vacías.", lugares: ["x-jet", "sentinel-station"] , premio: "Los mutantes salvados ofrecen su ayuda: en el próximo capítulo, un héroe que ustedes elijan empieza con 2 fichas Comodín." },
   victoria: {
     titulo: "El planeador cae",
     texto: [
@@ -847,11 +847,11 @@ const CAPITULOS = {
     "En la azotea de Oscorp los espera alguien que no esperaban: Mystique. Osborn la culpó de todo frente a la prensa y ella quiere verlo caer. «No vengo a ayudarlos», dice. «Vengo a verlo perder.»"
   ],
   evento: { titulo: "Fuego en la redacción", texto: "Toda la prensa de la ciudad está mirando.", efectos: [
-    "Desafío Identidad Secreta activo.",
+    "Desafío Identidad Secreta: la prensa vigila. Se ponen 3 Periodistas en la mesa y cada héroe que actúe cerca de ellos acumula Exposición; con 3, su identidad se revela (lo explica el paso «Desafío Identidad Secreta» de la preparación).",
     { si: { evidencia: "publica" }, t: "Osborn está desesperado: el Duende empieza Acelerado (ficha naranja al final de la Trama)." },
     { si: { evidencia: "secreta" }, t: "Ya lo esperaban: el Duende empieza Frenado (ficha verde sobre su mazo)." }
   ] },
-  pistas: { titulo: "Las copias", texto: "Dos copias de las pruebas contra Osborn siguen en la ciudad: en el puente y en el aula de periodismo de Midtown. Si el Duende las encuentra primero, las quema.", lugares: ["brooklyn-bridge", "midtown-high"] },
+  pistas: { titulo: "Las copias", texto: "Dos copias de las pruebas contra Osborn siguen en la ciudad: en el puente y en el aula de periodismo de Midtown. Si el Duende las encuentra primero, las quema.", lugares: ["brooklyn-bridge", "midtown-high"] , premio: "Las pruebas del Bugle revelan los planes del Duende: en el próximo capítulo, miren las 3 primeras cartas del Plan Maestro y ordénenlas como quieran." },
   victoria: {
     titulo: "Desenmascarado",
     texto: [
@@ -895,7 +895,7 @@ const CAPITULOS = {
     { si: { magneto: "aliado" }, t: "Magneto vigila el cielo desde Asteroid M: si algo rojo intenta salir de la ciudad, lo verá." }
   ],
   evento: { titulo: "Zarcillos en el acero", texto: "Rhino arrastra con él a media prisión.", efectos: ["Coloca 1 Matón extra en Brooklyn Bridge."] },
-  pistas: { titulo: "Los engendros", texto: "Carnage dejó dos nidos de engendros: en el laboratorio de Osborn y en los sótanos de Queens. Si los queman, su familia crece más despacio.", lugares: ["osborn-labs", "queens"] },
+  pistas: { titulo: "Los engendros", texto: "Carnage dejó dos nidos de engendros: en el laboratorio de Osborn y en los sótanos de Queens. Si los queman, su familia crece más despacio.", lugares: ["osborn-labs", "queens"] , premio: "Sin nidos, la familia de Carnage crece más despacio: el villano del próximo capítulo empieza Frenado (ficha verde sobre su mazo)." },
   victoria: {
     titulo: "El puente resiste",
     texto: [
@@ -937,7 +937,7 @@ const CAPITULOS = {
     "Miles, Gwen y Miguel no vienen a pelear contra Eddie: vienen a quitarle el collar."
   ],
   evento: { titulo: "Perro de guardia", texto: "Osborn reforzó la torre con su propia seguridad.", efectos: ["Coloca 1 Matón extra en Oscorp Tower."] },
-  pistas: { titulo: "Romper el control", texto: "El collar recibe órdenes desde la antena del Bugle y desde el transmisor de Osborn Labs. Si apagan los dos, Eddie vuelve en sí.", lugares: ["daily-bugle", "osborn-labs"] },
+  pistas: { titulo: "Romper el control", texto: "El collar recibe órdenes desde la antena del Bugle y desde el transmisor de Osborn Labs. Si apagan los dos, Eddie vuelve en sí.", lugares: ["daily-bugle", "osborn-labs"] , premio: "Con las antenas apagadas, el simbionte de Eddie está furioso con Osborn: en el próximo capítulo, cada héroe empieza con 1 ficha de Ataque." },
   victoria: {
     titulo: "Eddie vuelve",
     texto: [
@@ -978,7 +978,7 @@ const CAPITULOS = {
     "Mystique llega a la azotea de Midtown donde se reúnen los héroes. «Este es mío», dice. Jean le pone una mano en el hombro: «Es de todos.»"
   ],
   evento: { titulo: "Fórmula roja", texto: "Osborn tiene la fuerza del Duende y la del simbionte de Carnage.", efectos: ["Coloca 1 Matón extra en Oscorp Tower."] },
-  pistas: { titulo: "Separar al simbionte", texto: "Hank preparó dos amplificadores sónicos. Si los encienden, el simbionte rojo se suelta de Osborn al primer golpe fuerte.", lugares: ["daily-bugle", "brooklyn-bridge"] },
+  pistas: { titulo: "Separar al simbionte", texto: "Hank preparó dos amplificadores sónicos. Si los encienden, el simbionte rojo se suelta de Osborn al primer golpe fuerte.", lugares: ["daily-bugle", "brooklyn-bridge"] , premio: "Los amplificadores de Hank siguen encendidos: en el final, el medidor de engendros de Carnage empieza 1 casilla más abajo.", premioEfectos: [{ carnage: -1 }] },
   victoria: {
     titulo: "El Duende cae",
     texto: [
@@ -1021,7 +1021,7 @@ const CAPITULOS = {
     { si: { magneto: "rechazado" }, t: "Ororo y Logan esperan en la escuela con Scott, que se ajusta el visor: ya detuvieron a Cain una vez." }
   ],
   evento: { titulo: "Imparable", texto: "Juggernaut no se desvía y arrastra todo lo que encuentra.", efectos: ["Coloca 1 Matón extra en Queens."] },
-  pistas: { titulo: "Los alumnos", texto: "Hay alumnos esperando en el X-Jet y en el hangar. Si los sacan a tiempo, Carnage no tendrá a quién buscar en la escuela.", lugares: ["x-jet", "hangar-bay"] },
+  pistas: { titulo: "Los alumnos", texto: "Hay alumnos esperando en el X-Jet y en el hangar. Si los sacan a tiempo, Carnage no tendrá a quién buscar en la escuela.", lugares: ["x-jet", "hangar-bay"] , premio: "Los alumnos están a salvo y Carnage tiene menos a quién buscar: en el final, el medidor de engendros empieza 1 casilla más abajo.", premioEfectos: [{ carnage: -1 }] },
   victoria: {
     titulo: "El gigante se libera",
     texto: [
@@ -1062,7 +1062,7 @@ const CAPITULOS = {
     "Peter, Felicia y Mystique salen desde Queens. Eddie se queda en la casa de la tía May recuperándose: el collar le dejó marcas que no se van."
   ],
   evento: { titulo: "Fórmula roja", texto: "Osborn tiene la fuerza del Duende y la del simbionte de Carnage.", efectos: ["Coloca 1 Matón extra en Osborn Laboratories."] },
-  pistas: { titulo: "Los tanques", texto: "Hay dos tanques con copias listas: en Oscorp Tower y en el gimnasio de Midtown. Si los destruyen, nadie más tendrá un simbionte.", lugares: ["oscorp-tower", "midtown-high"] },
+  pistas: { titulo: "Los tanques", texto: "Hay dos tanques con copias listas: en Oscorp Tower y en el gimnasio de Midtown. Si los destruyen, nadie más tendrá un simbionte.", lugares: ["oscorp-tower", "midtown-high"] , premio: "Sin copias, Carnage llega más débil: en el final, el medidor de engendros empieza 1 casilla más abajo.", premioEfectos: [{ carnage: -1 }] },
   victoria: {
     titulo: "Sin copias",
     texto: [
@@ -1104,7 +1104,7 @@ const CAPITULOS = {
     "Eddie, sin su simbionte, le ruega a Jessica que lo recuperen. Hank preparó un sonido que puede soltar al simbionte sin matarlo. Spider-Ham ya eligió su martillo más grande."
   ],
   evento: { titulo: "Ariete negro", texto: "Rhino lleva la fuerza de dos.", efectos: ["Coloca 1 Matón extra en Oscorp Tower."] },
-  pistas: { titulo: "Las antenas del collar", texto: "El collar recibe órdenes desde Osborn Labs y desde la antena del Bugle. Si las apagan, el simbionte deja de obedecer.", lugares: ["osborn-labs", "daily-bugle"] },
+  pistas: { titulo: "Las antenas del collar", texto: "El collar recibe órdenes desde Osborn Labs y desde la antena del Bugle. Si las apagan, el simbionte deja de obedecer.", lugares: ["osborn-labs", "daily-bugle"] , premio: "El simbionte de Eddie vuelve a casa con ganas de pelear: en el final, cada héroe empieza con 1 ficha Comodín." },
   victoria: {
     titulo: "El simbionte vuelve a casa",
     texto: [
@@ -1152,7 +1152,7 @@ const CAPITULOS = {
     { si: { sonico: "usar" }, t: "Los emisores de S.H.I.E.L.D. debilitan a los engendros: el medidor empieza en 0 y cada héroe empieza con 1 ficha de Ataque." },
     { si: { sonico: "no" }, t: "El medidor de engendros empieza en la casilla que indica la campaña." }
   ] },
-  pistas: { titulo: "Los alumnos atrapados", texto: "Dos grupos de alumnos escaparon de la escuela pero quedaron rodeados: en el Bugle y junto al X-Jet. Si los rescatan, ningún alumno se queda atrás.", lugares: ["daily-bugle", "x-jet"] },
+  pistas: { titulo: "Los alumnos atrapados", texto: "Dos grupos de alumnos escaparon de la escuela pero quedaron rodeados: en el Bugle y junto al X-Jet. Si los rescatan, ningún alumno se queda atrás.", lugares: ["daily-bugle", "x-jet"] , premio: "Ningún alumno se queda atrás: cambia el epílogo final." },
   victoria: {
     titulo: "Nueva York amanece",
     texto: [

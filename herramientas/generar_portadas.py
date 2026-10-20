@@ -34,6 +34,9 @@ sys.path.insert(0, str(CONTENIDO))
 from artes import a11_agy, a12_codex  # noqa: E402
 
 ESTILO = (
+    "IMPORTANT: the attached reference images are official Marvel United board game figures. The final image MUST "
+    "use exactly those character designs and that chibi proportion (big head about the size of the torso, short "
+    "limbs), not realistic or adult proportions. If the picture does not look like those figures, it is wrong. "
     "A vertical 9:16 comic book cover poster for one chapter of a Marvel United board game campaign. "
     "Art style: the same chunky chibi Marvel United style as the reference figures (big heads, compact bodies, "
     "bold black ink outlines, saturated colors), but staged as a dramatic, cinematic comic cover: strong "
