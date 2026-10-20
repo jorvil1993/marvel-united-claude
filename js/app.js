@@ -177,10 +177,18 @@
     return `<div class="anteriormente">${caption(t)}</div>`;
   }
 
+  let vsVisto = null;
   function portada(c) {
     const v = VILLANOS[c.villano], acto = ACTOS[c.acto];
-    return `<section class="portada poster" style="background-image:url('assets/villain/${c.villano}-art.jpg')">
-      <img class="poster-img" src="assets/covers/${E.nodo}.jpg" alt="" onerror="this.remove()">
+    const animar = vsVisto !== E.nodo; vsVisto = E.nodo;
+    const hs = equipoJugando();
+    const vs = `<div class="vs ${animar ? "animar" : ""}" aria-hidden="true">
+        <div class="vs-heroes">${hs.map((h, i) => `<img class="vs-heroe" style="--i:${i};--g:${[-7, 3, 8][i] || 0}deg" src="assets/char/${h}.jpg" alt="">`).join("")}</div>
+        <div class="vs-letras"><span>VS</span></div>
+        <div class="vs-villano"><span class="humo h1"></span><span class="humo h2"></span><span class="humo h3"></span><span class="humo h4"></span><img src="assets/char/${c.villano}.jpg" alt=""></div>
+      </div>`;
+    return `<section class="portada poster" aria-label="${esc(hs.map(h => HEROES[h].nombre).join(", "))} contra ${esc(v.nombre)}">
+      ${vs}<img class="poster-img" src="assets/covers/${E.nodo}.jpg" alt="" onerror="this.remove()">
       <div class="portada-num" aria-hidden="true">#${E.historia.filter(h => h.nodo !== "F").length + 1 > 10 ? 10 : E.historia.filter(h => h.nodo !== "F").length + 1}</div>
       <div class="portada-txt"><span class="acto">${acto.nombre} · ${acto.titulo}</span><h2>${esc(c.titulo)}</h2>
       <span class="contra">contra <b>${esc(v.nombre)}</b> · ${estrellas(v.dificultad)}</span></div></section>`;

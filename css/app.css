@@ -418,3 +418,29 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 .modal { overflow-y: auto; }
 .modal-caja { max-height: none; margin-block: auto; }
 .btn:disabled, .btn.verde:disabled, .btn.rojo:disabled { background: #4a4f68; color: #9aa0b8; cursor: not-allowed; box-shadow: none; }
+
+/* ---------- v4: portada animada Héroes VS Villano ---------- */
+.portada.poster { background: repeating-conic-gradient(from 0deg at 50% 46%, #e23a3f 0 7deg, #b9141b 7deg 14deg); }
+.vs { position: absolute; inset: 0; overflow: hidden; }
+.vs::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, .25) 1.2px, transparent 1.8px) 0 0 / 8px 8px, radial-gradient(circle at 50% 46%, rgba(246, 213, 75, .55), transparent 55%); }
+.vs-heroes { position: absolute; top: 13%; left: 0; right: 0; display: flex; justify-content: center; gap: 3%; }
+.vs-heroe { width: 27%; aspect-ratio: 460 / 628; object-fit: cover; border: 3px solid #000; border-radius: 8px; box-shadow: 5px 5px 0 #000; transform: rotate(var(--g)); }
+.vs-letras { position: absolute; top: 34%; left: 0; right: 0; display: flex; justify-content: center; z-index: 2; }
+.vs-letras span { font: 400 clamp(4rem, 22vw, 7rem)/1 var(--f-sfx); color: var(--caption); -webkit-text-stroke: 3px #000; text-shadow: 6px 6px 0 #000; transform: rotate(-8deg); display: block; }
+.vs-villano { position: absolute; top: 43%; left: 50%; width: 46%; transform: translateX(-50%); }
+.vs-villano img { position: relative; width: 100%; aspect-ratio: 460 / 628; object-fit: cover; border: 4px solid #000; border-radius: 10px; box-shadow: 8px 8px 0 #000; transform: rotate(3deg); }
+.humo { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(235, 235, 245, .95) 0 40%, rgba(200, 200, 215, .7) 60%, transparent 72%); opacity: 0; pointer-events: none; }
+.humo.h1 { left: -25%; top: 0; } .humo.h2 { right: -25%; top: 10%; } .humo.h3 { left: -15%; bottom: -10%; } .humo.h4 { right: -15%; bottom: -5%; }
+@media (prefers-reduced-motion: no-preference) {
+  .vs.animar .vs-heroe { animation: entraHeroe .55s cubic-bezier(.2, 1.6, .4, 1) both; animation-delay: calc(.25s + var(--i) * .35s); }
+  .vs.animar .vs-letras span { animation: golpeVS .5s cubic-bezier(.3, 1.8, .5, 1) 1.35s both; }
+  .vs.animar .vs-letras { animation: temblor .35s ease-out 1.6s both; }
+  .vs.animar .vs-villano img { animation: puffVillano .6s ease-out 2s both; }
+  .vs.animar .humo { animation: humo 1.1s ease-out 1.9s both; }
+  .vs.animar .humo.h2 { animation-delay: 1.95s; } .vs.animar .humo.h3 { animation-delay: 2s; } .vs.animar .humo.h4 { animation-delay: 2.05s; }
+}
+@keyframes entraHeroe { from { transform: translateY(-140%) rotate(calc(var(--g) * 4)) scale(.4); opacity: 0; } to { transform: rotate(var(--g)); opacity: 1; } }
+@keyframes golpeVS { from { transform: rotate(-8deg) scale(4); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
+@keyframes temblor { 0%, 100% { transform: none; } 25% { transform: translate(-6px, 4px); } 50% { transform: translate(5px, -4px); } 75% { transform: translate(-3px, 2px); } }
+@keyframes puffVillano { from { transform: rotate(3deg) scale(.5); opacity: 0; filter: blur(8px); } 60% { transform: rotate(3deg) scale(1.1); opacity: 1; filter: blur(0); } to { transform: rotate(3deg) scale(1); opacity: 1; } }
+@keyframes humo { 0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.8); } }
