@@ -16,6 +16,7 @@
       heridos: [], exposicion: {}, publicos: [],
       pendientes: [], ayuda: false, frenado: false,
       asignacion: null, partida: null, resultado: null, decision: null,
+      desbloqueadas: [], splash: [],
       historia: []
     };
   }
@@ -59,6 +60,161 @@
   const resolverHeroe = h => typeof h === "string" ? h : (Object.entries(h.si).every(([k, v]) => E.flags[k] === v) ? h.h : h.no);
   const heroesDe = c => c.heroes.map(resolverHeroe);
 
+  /* ---------- Habilidades definitivas ---------- */
+  const desbloqueada = h => (E.desbloqueadas || []).includes(h);
+  const usoTxt = u => u === "una" ? "Una vez por partida" : "Siempre que se cumpla";
+  function revisarDesbloqueos(heroes) {
+    const nuevos = [];
+    heroes.forEach(h => {
+      const U = ULTIMATES[h];
+      if (!U || desbloqueada(h) || (E.xp[h] || 0) < U.umbral) return;
+      E.desbloqueadas.push(h); E.splash.push(h); nuevos.push(h);
+    });
+    return nuevos;
+  }
+  function cartaUlt(h, extra = "") {
+    const U = ULTIMATES[h], H = HEROES[h];
+    return `<article class="ult ${extra}"><div class="ult-cab"><span>Habilidad definitiva</span><b>${esc(H.nombre)}</b></div>
+      <div class="ult-arte"><img src="assets/char/${h}.jpg" alt=""></div>
+      <div class="ult-cuerpo"><h4>${esc(U.titulo)}</h4><p>${ico(U.texto)}</p><span class="ult-uso ${U.uso}">${usoTxt(U.uso)}</span></div></article>`;
+  }
+  function capa(html, cls) {
+    let c = document.getElementById("capa");
+    if (!c) { c = document.createElement("div"); c.id = "capa"; document.body.appendChild(c); }
+    c.className = "capa " + (cls || ""); c.innerHTML = html; c.hidden = false;
+    return c;
+  }
+  function cerrarCapa() { const c = document.getElementById("capa"); if (c) { c.hidden = true; c.innerHTML = ""; } despierto(false); clearInterval(carruselTimer); }
+  const capaAbierta = () => { const c = document.getElementById("capa"); return !!c && !c.hidden; };
+  function mostrarSplash() {
+    if (!E.splash || !E.splash.length || capaAbierta() || !$("#modal").hidden) return;
+    const h = E.splash[0];
+    capa(`<div class="splash" role="dialog" aria-modal="true" aria-label="Habilidad desbloqueada">
+      <p class="splash-sfx">¡Desbloqueado!</p>${cartaUlt(h, "grande")}
+      <button class="btn" id="btnSplashOk">${E.splash.length > 1 ? "Siguiente" : "¡A jugar!"}</button></div>`, "capa-splash");
+  }
+
+  /* ---------- Pantalla siempre encendida ---------- */
+  let wakeLock = null;
+  async function despierto(on) {
+    try {
+      if (on && "wakeLock" in navigator && document.visibilityState === "visible") wakeLock = await navigator.wakeLock.request("screen");
+      if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { /* el navegador no lo permite: la pantalla puede apagarse */ }
+  }
+  document.addEventListener("visibilitychange", () => {
+    const c = document.getElementById("capa");
+    if (document.visibilityState === "visible" && capaAbierta() && c.classList.contains("capa-carrusel")) despierto(true);
+  });
+
+  /* ---------- Mostrar cartas (carrusel) ---------- */
+  const CLAVE_DISP = "telarana-mutante-dispositivo";
+  function prefs() { try { return JSON.parse(localStorage.getItem(CLAVE_DISP)) || {}; } catch (e) { return {}; } }
+  function guardarPrefs(pr) { try { localStorage.setItem(CLAVE_DISP, JSON.stringify(pr)); } catch (e) { /* sin guardado */ } }
+  let carruselTimer = null, carruselIdx = 0;
+  function equipoActivo() { return E.partida ? E.partida.equipo : equipoJugando(); }
+  function abrirConfigCartas() {
+    const pr = prefs(), eq = equipoActivo();
+    const sel = pr.heroes && pr.heroes.some(h => eq.includes(h)) ? pr.heroes : eq;
+    const seg = pr.seg === undefined ? 5 : pr.seg;
+    capa(`<div class="modal-caja config-cartas" role="dialog" aria-modal="true" aria-labelledby="cfgT">
+      <h3 id="cfgT">¿Qué cartas muestra este celular?</h3>
+      <p class="nota">Elige las que te sirvan durante la partida. La pantalla no se apagará mientras se muestren.</p>
+      <div class="pregunta"><b>Héroes</b>
+        ${eq.map(h => `<label class="ko"><input type="checkbox" id="cfg-${h}" data-cfg-h="${h}" ${sel.includes(h) ? "checked" : ""}> ${esc(HEROES[h].nombre)}${desbloqueada(h) ? " · con su habilidad definitiva" : ""}</label>`).join("")}</div>
+      <div class="pregunta"><b>Cartas del capítulo</b>
+        <label class="ko"><input type="checkbox" id="cfg-reto" ${pr.reto !== false ? "checked" : ""}> Carta de Reto (los objetivos y el premio)</label>
+        <label class="ko"><input type="checkbox" id="cfg-villano" ${pr.villano ? "checked" : ""}> Villano (su complot y su ¡BAM!)</label></div>
+      <div class="pregunta"><b>Cambiar de carta cada</b>
+        <div class="fila">${[5, 8, 12, 0].map(n => `<button class="chip ${seg === n ? "on" : ""}" data-cfg-seg="${n}">${n ? n + " segundos" : "Solo al tocar"}</button>`).join("")}</div></div>
+      <div class="fila"><button class="btn" id="btnCarruselIr">Mostrar</button><button class="btn-sec" id="btnCapaCerrar">Cancelar</button></div></div>`, "capa-modal");
+  }
+  function leerConfig() {
+    const pr = prefs();
+    pr.heroes = [...document.querySelectorAll("[data-cfg-h]")].filter(x => x.checked).map(x => x.dataset.cfgH);
+    pr.reto = !!(document.getElementById("cfg-reto") || {}).checked;
+    pr.villano = !!(document.getElementById("cfg-villano") || {}).checked;
+    guardarPrefs(pr); return pr;
+  }
+  const claveUsadas = () => "telarana-usadas-" + (E.partida ? E.partida.nodo : E.nodo);
+  function usadas() { try { return JSON.parse(sessionStorage.getItem(claveUsadas())) || []; } catch (e) { return []; } }
+  function diapositivas() {
+    const pr = prefs(), c = cap(E.partida ? E.partida.nodo : E.nodo), v = VILLANOS[c.villano], eq = equipoActivo(), out = [];
+    eq.filter(h => (pr.heroes || eq).includes(h)).forEach(h => {
+      const H = HEROES[h], vet = nivelHeroe(h) > 1;
+      if (desbloqueada(h)) {
+        out.push(`${cartaUlt(h, "grande")}${vet ? `<p class="slide-nota">Además empieza con 1 ficha ${ico(H.mejora.ficha)}</p>` : ""}${ULTIMATES[h].uso === "una" ? `<button class="chip usada-btn ${usadas().includes(h) ? "on" : ""}" data-usada="${h}">${usadas().includes(h) ? "Ya la usamos en esta partida" : "Marcar como usada"}</button>` : ""}`);
+      } else {
+        out.push(`<article class="ult grande heroe-slide"><div class="ult-cab"><span>${esc(H.rol)}</span><b>${esc(H.nombre)}</b></div><div class="ult-arte"><img src="assets/char/${h}.jpg" alt=""></div>
+        <div class="ult-cuerpo"><h4>Sus cartas especiales</h4><ul>${H.especiales.map(x => `<li>${ico(x)}</li>`).join("")}</ul>${vet ? `<span class="ult-uso siempre">Empieza con 1 ficha ${ico(H.mejora.ficha)}</span>` : ""}
+        <span class="slide-nota">Habilidad definitiva: ${ULTIMATES[h].umbral ? `se desbloquea al terminar su ${ULTIMATES[h].umbral}.ª partida` : "disponible"}</span></div></article>`);
+      }
+    });
+    if (pr.reto !== false) out.push(`<article class="carta carta-pistas grande"><span class="carta-tipo">Carta de Reto</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
+      <ol class="carta-pasos"><li><b>Objetivos:</b> en ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
+      <li><b>Jugar:</b> 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt=""> en ese Lugar recoge un objetivo.</li>
+      <li><b>Premio:</b> si recogen los dos, ${ico(c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1))}</li></ol></article>`);
+    if (pr.villano) out.push(`<article class="ult grande villano-slide"><div class="ult-cab"><span>Villano</span><b>${esc(v.nombre)}</b></div><div class="ult-arte"><img src="assets/char/${c.villano}.jpg" alt=""></div>
+      <div class="ult-cuerpo"><p><b>Complot:</b> ${ico(v.complot)}</p><p><b>¡BAM!:</b> ${ico(v.bam)}</p><p><b>Exceso:</b> ${ico(v.exceso)}</p></div></article>`);
+    return out;
+  }
+  function abrirCarrusel() {
+    const slides = diapositivas();
+    if (!slides.length) return abrirConfigCartas();
+    carruselIdx = Math.min(carruselIdx, slides.length - 1);
+    capa(`<div class="carrusel" role="dialog" aria-modal="true" aria-label="Cartas de la partida">
+      <div class="carrusel-barra"><button class="chip" id="btnCarruselCfg">Elegir cartas</button><button class="chip" id="btnCapaCerrar">Cerrar</button></div>
+      <div class="carrusel-slide" id="carruselSlide">${slides[carruselIdx]}</div>
+      <div class="carrusel-puntos">${slides.map((_, i) => `<span class="${i === carruselIdx ? "on" : ""}"></span>`).join("")}</div>
+      <p class="carrusel-ayuda">Toca la carta para pasar a la siguiente. La pantalla queda encendida.</p></div>`, "capa-carrusel");
+    despierto(true);
+    clearInterval(carruselTimer);
+    const seg = prefs().seg === undefined ? 5 : prefs().seg;
+    if (seg && slides.length > 1) carruselTimer = setInterval(() => { carruselIdx = (carruselIdx + 1) % slides.length; abrirCarrusel(); }, seg * 1000);
+  }
+
+  /* ---------- Enviar la campaña a otro celular ---------- */
+  const b64url = bytes => { let t = ""; bytes.forEach(b => { t += String.fromCharCode(b); }); return btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+  const desdeB64url = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), ch => ch.charCodeAt(0));
+  async function codificar(obj) {
+    const json = JSON.stringify(obj);
+    try {
+      const buf = await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer();
+      return "z" + b64url(new Uint8Array(buf));
+    } catch (e) { return "j" + b64url(new TextEncoder().encode(json)); }
+  }
+  async function decodificar(t) {
+    const bytes = desdeB64url(t.slice(1));
+    if (t[0] === "z") return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text());
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+  let recibida = null;
+  async function enviarCampana() {
+    const copia = Object.assign({}, E, { splash: [] });
+    const url = location.origin + location.pathname + "?c=" + await codificar(copia);
+    const msg = $("#msgEnviar");
+    try {
+      if (navigator.share) { await navigator.share({ title: "Telaraña Mutante", text: "Campaña actualizada de Telaraña Mutante: ábrela en tu celular.", url }); if (msg) msg.textContent = "Enlace enviado."; return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(url); if (msg) msg.textContent = "Enlace copiado: pégalo en WhatsApp y ábrelo en el otro celular."; }
+    catch (e) { if (msg) msg.innerHTML = `Copia este enlace y ábrelo en el otro celular:<textarea class="enlace" readonly>${esc(url)}</textarea>`; }
+  }
+  async function revisarCampanaRecibida() {
+    const t = new URLSearchParams(location.search).get("c");
+    if (!t) return;
+    history.replaceState(history.state, "", location.pathname + location.hash);
+    try {
+      const st = await decodificar(t);
+      if (!st || st.v !== 2 || !CAPITULOS[st.nodo] || !Array.isArray(st.historia)) throw new Error();
+      recibida = st;
+      const jugadas = st.historia.filter(h => h.nodo !== "F").length, n = st.historia.length;
+      capa(`<div class="modal-caja" role="dialog" aria-modal="true"><p class="sfx sfx-chico">Campaña recibida</p>
+        <p>Viene en el capítulo ${Math.min(jugadas + 1, 10)}: <b>${esc(CAPITULOS[st.nodo].titulo)}</b>, con ${n} partida${n === 1 ? "" : "s"} jugada${n === 1 ? "" : "s"}.</p>
+        <p class="nota">Reemplaza la campaña que tenga este celular.</p>
+        <div class="fila"><button class="btn" id="btnRecibirSi">Cargar en este celular</button><button class="btn-sec" id="btnCapaCerrar">Ahora no</button></div></div>`, "capa-modal");
+    } catch (e) { /* enlace dañado: se ignora */ }
+  }
+
   /* ---------- Reglas de campaña ---------- */
   const dificultad = () => DIFICULTADES.find(d => d.id === E.dificultad) || DIFICULTADES[1];
   function nivelDe(c) {
@@ -66,7 +222,7 @@
     if (c.final && E.panico >= 3) n += 1;
     return clamp(n, 0, 3);
   }
-  function nivelHeroe(h) { const x = E.xp[h] || 0; return x >= 3 ? 3 : x >= 1 ? 2 : 1; }
+  function nivelHeroe(h) { return (E.xp[h] || 0) >= 1 ? 2 : 1; }
   function estadoPanico(p) {
     if (p <= 1) return { nombre: "Calma", texto: "Sin efecto en la mesa." };
     if (p <= 3) return { nombre: "Tensión", texto: "Al preparar, se coloca 1 Matón extra en el Lugar inicial del villano." };
@@ -128,7 +284,8 @@
     const fichas = [];
     equipo.forEach(h => {
       const nh = nivelHeroe(h), m = HEROES[h].mejora;
-      if (nh >= 2) fichas.push(`${HEROES[h].nombre} (${m.nombre}): 1 ficha ${m.ficha}${nh >= 3 ? " y 1 Comodín" : ""}.`);
+      if (nh >= 2) fichas.push(`${HEROES[h].nombre} (${m.nombre}): 1 ficha ${m.ficha}.`);
+      if (desbloqueada(h)) fichas.push(`${HEROES[h].nombre} tiene su habilidad definitiva «${ULTIMATES[h].titulo}» (${usoTxt(ULTIMATES[h].uso).toLowerCase()}).`);
     });
     if (E.ayuda) fichas.push("La alianza se reagrupa tras la derrota: cada héroe, 1 ficha Comodín.");
     if (dificultad().id === "facil") fichas.push("Dificultad Fácil: cada héroe, 1 ficha Comodín.");
@@ -206,11 +363,13 @@
     if (E.fase === "decision") return vistaDecision();
     if (E.fase === "juego") return `<section class="vacio"><p class="sfx sfx-chico">¡En juego!</p><p>La partida contra ${esc(VILLANOS[cap().villano].nombre)} está en curso. Cuando termine, anota el resultado en <b>Partida</b>.</p><button class="btn" data-ir="partida">Ir a Partida</button></section>`;
     const c = cap(), mapa = asignacion(), hs = heroesDe(c), equipo = equipoJugando();
+    if (revisarDesbloqueos(hs.filter(h => ULTIMATES[h] && ULTIMATES[h].umbral === 0)).length) guardar();
     const tarjeta = h => {
       const H = HEROES[h], nh = nivelHeroe(h);
       return `<article class="heroe-sel ${mapa[h] === -1 ? "fuera" : ""}">${retrato(h)}
         <div class="heroe-sel-txt"><span class="etq">${esc(H.rol)}${nh > 1 ? ` · Nivel ${nh}` : ""}</span><h4>${esc(H.nombre)}</h4>${iconos(H)}
-        ${nh > 1 ? `<span class="veterano">Empieza con 1 ficha ${ico(H.mejora.ficha)}${nh >= 3 ? ` y 1 ${ico("Comodín")}` : ""}</span>` : ""}
+        ${nh > 1 ? `<span class="veterano">Empieza con 1 ficha ${ico(H.mejora.ficha)}</span>` : ""}
+        ${desbloqueada(h) ? `<button class="ult-mini" data-ver-ult="${h}"><b>Habilidad: ${esc(ULTIMATES[h].titulo)}</b><span>${usoTxt(ULTIMATES[h].uso)} · ver carta</span></button>` : ""}
         ${E.heridos.includes(h) ? `<span class="chip chip-mal">Herido: roba 2 cartas</span>` : ""}
         <div class="asignar" role="radiogroup" aria-label="Quién juega con ${esc(H.nombre)}">
           ${E.jugadores.map((j, i) => `<button class="chip ${mapa[h] === i ? "on" : ""}" data-asignar="${h}" data-j="${i}" aria-pressed="${mapa[h] === i}">${esc(j)}</button>`).join("")}
@@ -237,7 +396,7 @@
       </div></section>
     <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
       <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${ico(x)}</li>`).join("")}</ul>` : `<span>${ico(s.d)}</span>`}</li>`).join("")}</ol></section>
-    <div class="cta"><button class="btn" id="btnEmpezar">Mesa lista: empezar la partida</button></div>`;
+    <div class="cta cta-doble"><button class="btn-sec" id="btnMostrarCartas">Mostrar cartas en este celular</button><button class="btn" id="btnEmpezar">Mesa lista: empezar la partida</button></div>`;
   }
 
   /* ---------- Vista: Partida ---------- */
@@ -256,6 +415,7 @@
     return `
     <section class="mesa-villano"><img src="assets/char/${c.villano}.jpg" alt="">
       <div class="mv-txt"><span class="etq">${esc(c.titulo)}</span><h2>${esc(v.nombre)}</h2><span class="estado-v">${v.complot === "No tiene." ? "Sin complot maligno: pierden si se acaba su Plan Maestro o un héroe se queda sin cartas." : "Complot: " + esc(v.complot)}</span></div></section>
+    <div class="cta"><button class="btn" id="btnMostrarCartas">Mostrar cartas en este celular</button></div>
     <section class="bloque"><h3 class="titulo-sec">Recordatorio</h3><ul class="avisos">${recordatorio.map(x => `<li>${ico(x)}</li>`).join("")}</ul></section>
     <section class="bloque resolver"><h3 class="titulo-sec">¿Cómo terminó?</h3>
       <p class="nota">Al tocar un botón se abre una ventana con tres preguntas rápidas.</p>
@@ -327,7 +487,7 @@
         <h4>${esc(h.nombre)} <small>${esc(h.alias)}</small></h4><p class="rol">${esc(h.rol)}</p>${iconos(h)}
         <ul class="esp">${h.especiales.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
         <p><b>Fuerte:</b> ${esc(h.fuerte)}</p><p><b>Débil:</b> ${esc(h.debil)}</p><p><b>Brilla contra:</b> ${esc(h.contra)}</p>
-        <p class="mejora"><b>Mejora «${esc(h.mejora.nombre)}»:</b> desde su segunda partida empieza con 1 ficha ${esc(h.mejora.ficha)}; desde la cuarta, también con 1 Comodín.</p></div></article>`;
+        <p class="mejora"><b>Mejora «${esc(h.mejora.nombre)}»:</b> desde su segunda partida empieza con 1 ficha ${esc(h.mejora.ficha)}.</p></div></article>`;
     }).join("")}</div>`;
     if (pestana === "villanos") cuerpo = `<div class="grilla-v">${Object.keys(VILLANOS).map(id => {
       const v = VILLANOS[id];
@@ -357,7 +517,7 @@
       <h4>Carta de Reto</h4><p>Cada capítulo trae un reto con premio: pone 2 fichas de Exposición boca abajo en dos Lugares como objetivos. Un héroe en ese Lugar puede gastar 1 acción Heroica para recoger un objetivo. Si recogen los dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
       <h4>La historia se ramifica</h4><p>Ganar o perder lleva a capítulos distintos, con otros villanos y otros lugares. Cada acto tiene un capítulo para cada combinación de resultados. El final hay que ganarlo: si pierden, lo vuelven a jugar con ayuda.</p>
       <h4>Decisiones</h4><p>Cuatro veces en la campaña tendrán que elegir. Las decisiones cambian aliados, cómo empieza el Acto III y cómo termina todo.</p>
-      <h4>Mejoras de los héroes</h4><p>Cada héroe gana experiencia al jugar. Desde su segunda partida empieza con 1 ficha de acción propia; desde la cuarta, también con 1 Comodín.</p>
+      <h4>Mejoras de los héroes</h4><p>Cada héroe gana experiencia al jugar. Desde su segunda partida empieza con 1 ficha de acción propia. Al terminar su segunda partida desbloquea su habilidad definitiva (Venom, Magneto y Mystique la traen desde que se unen). Algunas se usan siempre que se cumple la condición y otras una vez por partida.</p>
       <h4>Herido y ayuda</h4><p>Si pierden, cada héroe que quedó fuera de combate roba solo 2 cartas la próxima vez que juegue. Pero la alianza se reagrupa: en el capítulo siguiente cada héroe empieza con 1 Comodín.</p>
       <h4>Pánico en Nueva York</h4><p>Sube con las derrotas y con algunas decisiones. Con 2-3 se añade 1 Matón al preparar; con 4-5 además el villano empieza Acelerado. Afecta a la dificultad y al epílogo del final.</p>
       <h4>Turno del villano</h4><p>Roba una carta de Plan Maestro y resuélvela de arriba abajo: mueve al villano en sentido horario, activa ¡BAM! (tablero y Amenazas), añade Matones y Civiles alrededor y aplica el efecto especial. Si no caben fichas, se activa su Exceso.</p>
@@ -395,6 +555,10 @@
       <p class="nota">La campaña se guarda en este celular. Para pasarla a otro, exporta el archivo y luego impórtalo allá.</p>
       <div class="fila"><button class="btn-sec" id="btnExportar">Exportar campaña</button><label class="btn-sec archivo-in">Importar campaña<input type="file" id="inImportar" accept="application/json"></label></div>
       <p class="nota" id="msgRespaldo" role="status"></p>
+      <h4 class="sub">Usar en otro celular</h4>
+      <p class="nota">Cuando terminen una partida, envía la campaña al otro celular (por WhatsApp, por ejemplo). Al abrir el enlace, ese celular queda igual que este y puede mostrar sus propias cartas.</p>
+      <button class="btn-sec" id="btnEnviar">Enviar campaña al otro celular</button>
+      <p class="nota" id="msgEnviar" role="status"></p>
       <button class="btn-sec" id="btnActualizar">Forzar actualización de la app</button>
       <p class="nota">Úsalo si no ves los últimos cambios. Tu campaña no se borra.</p>
       ${confirmarReinicio ? `<div class="confirma"><p>Esto borra toda la campaña y vuelve al primer capítulo.</p><div class="fila"><button class="btn rojo" id="btnReinicioSi">Sí, empezar de cero</button><button class="btn-sec" id="btnReinicioNo">Cancelar</button></div></div>`
@@ -429,8 +593,9 @@
     const c = cap(), P = E.partida, out = gano ? c.victoria : c.derrota, avisos = [];
     P.equipo.forEach(h => {
       const antes = nivelHeroe(h); E.xp[h] = (E.xp[h] || 0) + 1; const ahora = nivelHeroe(h);
-      if (ahora > antes) avisos.push(ahora === 2 ? `${HEROES[h].nombre} es Veterano: desde ahora empieza con 1 ficha ${HEROES[h].mejora.ficha} («${HEROES[h].mejora.nombre}»).` : `${HEROES[h].nombre} llega al nivel 3: además empieza con 1 Comodín.`);
+      if (ahora > antes) avisos.push(`${HEROES[h].nombre} es Veterano: desde ahora empieza con 1 ficha ${HEROES[h].mejora.ficha} («${HEROES[h].mejora.nombre}»).`);
     });
+    revisarDesbloqueos(P.equipo).forEach(h => avisos.push(`${HEROES[h].nombre} desbloqueó su habilidad definitiva «${ULTIMATES[h].titulo}». La verás en su tarjeta cada vez que juegue.`));
     if (c.identidad) Object.entries(P.exp).forEach(([h, n]) => {
       if (n >= 3) { if (!E.publicos.includes(h)) E.publicos.push(h); E.exposicion[h] = 0; if (!E.heridos.includes(h)) E.heridos.push(h); avisos.push(`La identidad de ${HEROES[h].nombre} ya es pública. La prensa no lo deja en paz: la próxima vez que juegue estará herido.`); }
       else E.exposicion[h] = n;
@@ -494,7 +659,10 @@
   const VISTAS = ["historia", "partida", "mapa", "archivo", "campana"];
   const pedida = location.hash.slice(1);
   let vista = VISTAS.includes(pedida) ? pedida : E.fase === "juego" ? "partida" : "historia";
-  function ir(v) { vista = v; render(); window.scrollTo(0, 0); }
+  function ir(v, apilar = true) {
+    const cambia = v !== vista; vista = v; render(); window.scrollTo(0, 0);
+    if (apilar && cambia) history.pushState({ vista: v }, "", "#" + v);
+  }
   function render() {
     const vistas = { historia: vistaHistoria, partida: vistaPartida, mapa: vistaMapa, archivo: vistaArchivo, campana: vistaCampana };
     const html = vistas[vista]();
@@ -502,10 +670,23 @@
     document.querySelectorAll(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ir === vista ? "page" : "false"));
     const jugadas = E.historia.filter(h => h.nodo !== "F").length;
     $("#capActual").textContent = E.fase === "fin" ? "Campaña terminada" : `Capítulo ${Math.min(jugadas + 1, 10)} de 10`;
+    setTimeout(mostrarSplash, 50);
   }
+  /* Botón atrás: primero cierra ventanas, después vuelve a la sección anterior; nunca saca de la app. */
+  history.replaceState({ raiz: true }, "", location.pathname + location.search);
+  history.pushState({ vista }, "", "#" + vista);
+  window.addEventListener("popstate", ev => {
+    if (capaAbierta()) { cerrarCapa(); history.pushState({ vista }, "", "#" + vista); return; }
+    if (!$("#modal").hidden) { $("#modal").hidden = true; if (E.partida) { E.partida.cierre = null; guardar(); } history.pushState({ vista }, "", "#" + vista); return; }
+    const st = ev.state || {};
+    if (st.vista && VISTAS.includes(st.vista)) return ir(st.vista, false);
+    if (vista !== "historia") ir("historia", false);
+    history.pushState({ vista }, "", "#" + vista);
+  });
 
   document.addEventListener("click", ev => {
     const t = ev.target.closest("button, [data-ir]");
+    if (!t && ev.target.closest("#carruselSlide")) { const n = diapositivas().length; carruselIdx = (carruselIdx + 1) % Math.max(n, 1); return abrirCarrusel(); }
     if (!t) return;
     const d = t.dataset;
     if (d.ir) return ir(d.ir);
@@ -516,6 +697,16 @@
       guardar(); return render();
     }
     if (t.id === "btnEmpezar") return empezar();
+    if (t.id === "btnSplashOk") { E.splash.shift(); guardar(); cerrarCapa(); return mostrarSplash(); }
+    if (d.verUlt) return capa(`<div class="splash" role="dialog" aria-modal="true">${cartaUlt(d.verUlt, "grande")}<button class="btn" id="btnCapaCerrar">Cerrar</button></div>`, "capa-splash");
+    if (t.id === "btnCapaCerrar") return cerrarCapa();
+    if (t.id === "btnMostrarCartas") return prefs().heroes ? abrirCarrusel() : abrirConfigCartas();
+    if (t.id === "btnCarruselCfg") { clearInterval(carruselTimer); return abrirConfigCartas(); }
+    if (d.cfgSeg !== undefined) { const pr = leerConfig(); pr.seg = Number(d.cfgSeg); guardarPrefs(pr); return abrirConfigCartas(); }
+    if (t.id === "btnCarruselIr") { leerConfig(); carruselIdx = 0; return abrirCarrusel(); }
+    if (d.usada) { const u = usadas(), i = u.indexOf(d.usada); if (i >= 0) u.splice(i, 1); else u.push(d.usada); try { sessionStorage.setItem(claveUsadas(), JSON.stringify(u)); } catch (e) { /* nada */ } return abrirCarrusel(); }
+    if (t.id === "btnEnviar") return enviarCampana();
+    if (t.id === "btnRecibirSi" && recibida) { E = Object.assign(estadoInicial(), recibida, { splash: [] }); recibida = null; guardar(); cerrarCapa(); return ir("historia"); }
     const P = E.partida;
     if (d.exp && P) { P.exp[d.exp] = clamp((P.exp[d.exp] || 0) + Number(d.d), 0, 3); guardar(); return abrirCierre(); }
     if (d.fin && P) { P.cierre = { res: d.fin, reto: null }; guardar(); return abrirCierre(); }
@@ -568,6 +759,7 @@
   });
 
   render();
+  revisarCampanaRecibida();
   if ("serviceWorker" in navigator) {
     let recargando = false;
     const habiaControl = !!navigator.serviceWorker.controller;

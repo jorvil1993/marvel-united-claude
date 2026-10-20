@@ -1261,3 +1261,24 @@ function epilogoFinal(estado) {
   if (intentos > 1) l.push(`Les costó ${intentos} intentos detener a Carnage. Ninguno de ellos se rindió.`);
   return { titulo, lineas: l };
 }
+
+/* Habilidades definitivas (adaptadas de las cartas Ultimate de la campaña Legacy de la comunidad).
+   Se desbloquean al terminar la 2.ª partida del héroe; los antihéroes que llegan tarde, desde su 1.ª.
+   uso: "siempre" = cada vez que se cumple la condición; "una" = una vez por partida. */
+const ULTIMATES = {
+  "spider-man":      { titulo: "Amigo y vecino", uso: "una", umbral: 2, texto: "Gasta 1 ficha Comodín para derrotar 2 Matones o rescatar 2 Civiles de tu Lugar de una sola vez." },
+  "miles-morales":   { titulo: "Sentido arácnido", uso: "siempre", umbral: 2, texto: "Si el villano termina su movimiento en tu Lugar, antes de que se resuelvan las Amenazas puedes usar de inmediato una de tus fichas de Movimiento para salir de ahí." },
+  "ghost-spider":    { titulo: "Olfato para los problemas", uso: "siempre", umbral: 2, texto: "Cuando tu Lugar vaya a tener Exceso, puedes gastar 1 ficha Comodín para cancelar el Exceso en tu Lugar." },
+  "spider-ham":      { titulo: "Dibujado para esto", uso: "siempre", umbral: 2, texto: "Cuando juegas una de tus cartas Dibu, puedes usar los iconos de abajo de otra carta de tu mano en lugar de los de esa carta." },
+  "spider-man-2099": { titulo: "Veneno paralizante", uso: "una", umbral: 2, texto: "Cuando le haces 2 o más daños al villano en un turno, anula el movimiento de su próxima carta de Plan Maestro." },
+  "spider-woman":    { titulo: "Feromonas", uso: "siempre", umbral: 2, texto: "Después de usar una acción Heroica, puedes convertir 1 Matón de tu Lugar en 1 Civil." },
+  "black-cat":       { titulo: "Mejor suerte la próxima", uso: "siempre", umbral: 2, texto: "Cuando juegas «Suerte felina», hasta tu siguiente turno se cancelan los ¡BAM! en tu Lugar." },
+  "venom-hero":      { titulo: "Simbiosis", uso: "siempre", umbral: 0, texto: "En el turno de otro héroe, si tu carta «Mejora simbionte» es la anterior en la Trama, ese héroe también usa su efecto especial." },
+  "wolverine":       { titulo: "Factor de curación mejorado", uso: "siempre", umbral: 2, texto: "Cuando recibes daño, pon las cartas que descartas encima de tu mazo en vez de al fondo: las vuelves a robar en tus próximos turnos." },
+  "cyclops":         { titulo: "Estratega maestro", uso: "siempre", umbral: 2, texto: "Cuando juegas «Liderazgo», en vez de su efecto puedes darle a otro héroe de tu Lugar 2 fichas a elegir entre Ataque, Heroica y Movimiento." },
+  "storm":           { titulo: "Desata la tormenta", uso: "una", umbral: 2, texto: "En tu turno, descarta cartas hasta quedarte con 1 en la mano y haz 1 Ataque en cada Lugar." },
+  "jean-grey":       { titulo: "Enlace mental", uso: "siempre", umbral: 2, texto: "Cuando otro héroe de tu Lugar derrota un Matón, puedes gastar 1 ficha de acción cualquiera para hacer además 1 daño a un Secuaz." },
+  "beast":           { titulo: "Hombre del Renacimiento", uso: "una", umbral: 2, texto: "Al preparar, después de robar tu mano, puedes poner cartas al fondo de tu mazo y volver a robar hasta tener 3." },
+  "magneto-hero":    { titulo: "Mesías mutante", uso: "siempre", umbral: 0, texto: "Cuando juegas «Magnetoquinesis», puedes usar sus Ataques para rescatar Civiles en vez de atacar." },
+  "mystique-hero":   { titulo: "Cambiaformas", uso: "una", umbral: 0, texto: "Cuando otro héroe vaya a recibir daño, puedes cambiar de Lugar con él y cancelar ese daño." }
+};
