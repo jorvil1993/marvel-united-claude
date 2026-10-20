@@ -60,6 +60,38 @@
   const resolverHeroe = h => typeof h === "string" ? h : (Object.entries(h.si).every(([k, v]) => E.flags[k] === v) ? h.h : h.no);
   const heroesDe = c => c.heroes.map(resolverHeroe);
 
+  /* ---------- Carta de Reto ---------- */
+  const premioMin = c => c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1);
+  function condReto(c, n) {
+    const r = c.pistas;
+    return r.n ? r.cond.replace("{n}", n >= 3 ? r.n[1] : r.n[0]) : r.cond;
+  }
+  const notaJugadores = (c, n) => c.pistas.n ? ` (con ${n} héroes)` : "";
+  /* Lista corta para las cartas (vista del capítulo y carrusel) */
+  function retoItems(c, n) {
+    const r = c.pistas;
+    if (r.tipo === "objetivos") return [
+      `<li><b>Preparar:</b> pon 1 ficha de Exposición <img class="ic-linea" src="assets/icons/pista.png" alt=""> boca abajo sobre ${esc(LUGARES[r.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[r.lugares[1]].nombre)}.</li>`,
+      `<li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt=""> y recoge ese objetivo. No cuenta para las Misiones.</li>`,
+      `<li><b>Premio:</b> si recogen los dos, ${ico(premioMin(c))}</li>`].join("");
+    return [r.prep ? `<li><b>Cómo se cuenta:</b> ${ico(r.prep)}</li>` : "",
+      `<li><b>Para cumplirlo:</b> ${ico(condReto(c, n))}${esc(notaJugadores(c, n))}</li>`,
+      `<li><b>Premio:</b> ${ico(premioMin(c))}</li>`].join("");
+  }
+  /* Pasos de la preparación */
+  function retoPasos(c, n) {
+    const r = c.pistas;
+    if (r.tipo === "objetivos") return [
+      "Toma 2 fichas de Exposición (las del celular, de la caja Spider-Verse).",
+      `Pon una boca abajo (mostrando la carcasa negra) sobre la carta de ${LUGARES[r.lugares[0]].nombre} y la otra sobre la de ${LUGARES[r.lugares[1]].nombre}, al costado, sin tapar los espacios de Civiles y Matones.`,
+      "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger ese objetivo y dejarlo junto a su mazo. Esa acción no cuenta para ninguna Misión.",
+      `Si recogen los dos, cumplen el reto. Premio: ${premioMin(c)}`
+    ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: los objetivos del reto van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []);
+    return [r.prep ? r.prep : "No hace falta preparar nada: se revisa al terminar la partida.",
+      `Para cumplirlo: ${condReto(c, n)}${notaJugadores(c, n)}`,
+      `Premio: ${premioMin(c)}`];
+  }
+
   /* ---------- Habilidades definitivas ---------- */
   const desbloqueada = h => (E.desbloqueadas || []).includes(h);
   const usoTxt = u => u === "una" ? "Una vez por partida" : "Siempre que se cumpla";
@@ -151,9 +183,7 @@
       }
     });
     if (pr.reto !== false) out.push(`<article class="carta carta-pistas grande"><span class="carta-tipo">Carta de Reto</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
-      <ol class="carta-pasos"><li><b>Objetivos:</b> en ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
-      <li><b>Jugar:</b> 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt=""> en ese Lugar recoge un objetivo.</li>
-      <li><b>Premio:</b> si recogen los dos, ${ico(c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1))}</li></ol></article>`);
+      <ol class="carta-pasos">${retoItems(c, eq.length)}</ol></article>`);
     if (pr.villano) out.push(`<article class="ult grande villano-slide"><div class="ult-cab"><span>Villano</span><b>${esc(v.nombre)}</b></div><div class="ult-arte"><img src="assets/char/${c.villano}.jpg" alt=""></div>
       <div class="ult-cuerpo"><p><b>Complot:</b> ${ico(v.complot)}</p><p><b>¡BAM!:</b> ${ico(v.bam)}</p><p><b>Exceso:</b> ${ico(v.exceso)}</p></div></article>`);
     return out;
@@ -270,14 +300,9 @@
         "Para alejar a la prensa, cualquier héroe puede gastar 1 acción Heroica y mover un Periodista a un Lugar vecino (si sale de su propio Lugar, se expone igual)."
       ].concat(exp.length ? ["Exposición que arrastran de capítulos anteriores: " + exp.map(h => `${HEROES[h].nombre} ${E.exposicion[h]}`).join(", ") + " (pónganla boca arriba junto a su mazo)."] : []), lista: true });
     }
-    const ev = lineas(c.evento.efectos);
-    pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
-    pasos.push({ t: `Carta de Reto: ${c.pistas.titulo}`, d: [
-      "Toma 2 fichas de Exposición (las del celular, de la caja Spider-Verse).",
-      `Pon una boca abajo (mostrando la carcasa negra) sobre la carta de ${LUGARES[c.pistas.lugares[0]].nombre} y la otra sobre la de ${LUGARES[c.pistas.lugares[1]].nombre}, al costado, sin tapar los espacios de Civiles y Matones.`,
-      "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger ese objetivo y dejarlo junto a su mazo. Esa acción no cuenta para ninguna Misión.",
-      `Si recogen los dos, cumplen el reto. Premio: ${c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1)}`
-    ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: los objetivos del reto van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []), lista: true, carta: "pistas" });
+    const ev = lineas(c.evento.efectos).filter(x => !x.startsWith("Activa el Desafío Identidad Secreta"));
+    if (ev.length) pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
+    pasos.push({ t: `Carta de Reto: ${c.pistas.titulo}`, d: retoPasos(c, n), lista: true, carta: "pistas" });
     const nv = nivelDe(c);
     pasos.push({ t: `Desafío: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
 
@@ -321,10 +346,10 @@
       const m = [];
       if (i === 0) m.push(`<span class="marca marca-v">Villano</span>`);
       if (i === 3) m.push(`<span class="marca marca-h">Héroes</span>`);
-      if (c.pistas.lugares.includes(id)) m.push(`<span class="marca marca-p">Reto</span>`);
+      if ((c.pistas.lugares || []).includes(id)) m.push(`<span class="marca marca-p">Reto</span>`);
       return `<div class="nodo" style="left:${x}%;top:${y}%"><img src="assets/loc/${id}.jpg" alt="" loading="lazy"><span class="nodo-n">${esc(LUGARES[id].nombre)}</span>${m.join("")}</div>`;
     }).join("");
-    const leyenda = c.anillo.map((id, i) => `<li><b>${esc(LUGARES[id].nombre)}</b>${i === 0 ? ' <span class="chip-mini v">Villano</span>' : ""}${i === 3 ? ' <span class="chip-mini h">Héroes</span>' : ""}${c.pistas.lugares.includes(id) ? ' <span class="chip-mini p">Reto</span>' : ""}<span>${esc((c.notas || {})[id] || "")}</span></li>`).join("");
+    const leyenda = c.anillo.map((id, i) => `<li><b>${esc(LUGARES[id].nombre)}</b>${i === 0 ? ' <span class="chip-mini v">Villano</span>' : ""}${i === 3 ? ' <span class="chip-mini h">Héroes</span>' : ""}${(c.pistas.lugares || []).includes(id) ? ' <span class="chip-mini p">Reto</span>' : ""}<span>${esc((c.notas || {})[id] || "")}</span></li>`).join("");
     return `<div class="anillo" role="img" aria-label="Lugares en sentido horario">
       <div class="anillo-centro"><img src="assets/char/${c.villano}.jpg" alt="${esc(v.nombre)}"></div>
       <svg class="anillo-flecha" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="2 2"/></svg>${nodos}</div>
@@ -388,11 +413,7 @@
       <div class="cartas">
         <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${ico(x)}</li>`).join("")}</ul></article>
         <article class="carta carta-pistas"><span class="carta-tipo">Carta de Reto</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
-          <ol class="carta-pasos">
-            <li><b>Preparar:</b> pon 1 ficha de Exposición <img class="ic-linea" src="assets/icons/pista.png" alt=""> boca abajo sobre ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
-            <li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt="Heroica"> y recoge ese objetivo. No cuenta para las Misiones.</li>
-            <li><b>Premio:</b> si recogen los dos, ${ico(c.pistas.premio.charAt(0).toLowerCase() + c.pistas.premio.slice(1))}</li>
-          </ol></article>
+          <ol class="carta-pasos">${retoItems(c, equipo.length)}</ol></article>
       </div></section>
     <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
       <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${ico(x)}</li>`).join("")}</ul>` : `<span>${ico(s.d)}</span>`}</li>`).join("")}</ol></section>
@@ -410,7 +431,7 @@
       `${v.nombre} tiene ${v.vida[P.equipo.length]} de vida. No se le puede dañar hasta completar 2 Misiones.`,
       "Con la 1ª Misión el villano queda Bajo Presión: juega Plan Maestro cada 2 cartas de héroe en vez de 3.",
       "Con la 3ª Misión, cada héroe roba 1 carta.",
-      `Carta de Reto «${c.pistas.titulo}»: objetivos en ${LUGARES[c.pistas.lugares[0]].nombre} y ${LUGARES[c.pistas.lugares[1]].nombre}; 1 acción Heroica para recoger cada uno.`
+      c.pistas.tipo === "objetivos" ? `Carta de Reto «${c.pistas.titulo}»: objetivos en ${LUGARES[c.pistas.lugares[0]].nombre} y ${LUGARES[c.pistas.lugares[1]].nombre}; 1 acción Heroica para recoger cada uno.` : `Carta de Reto «${c.pistas.titulo}»: ${condReto(c, P.equipo.length)}`
     ];
     return `
     <section class="mesa-villano"><img src="assets/char/${c.villano}.jpg" alt="">
@@ -514,7 +535,7 @@
         <li><img src="assets/icons/periodista.png" alt=""><span><b>Periodista</b> (credencial amarilla): solo con Identidad Secreta.</span></li>
       </ul>
       <p>Las fichas de acción (Mover, Atacar, Heroica, Comodín) que te da la campaña al empezar se guardan junto a tu mazo y se gastan cuando quieras en tu turno.</p>
-      <h4>Carta de Reto</h4><p>Cada capítulo trae un reto con premio: pone 2 fichas de Exposición boca abajo en dos Lugares como objetivos. Un héroe en ese Lugar puede gastar 1 acción Heroica para recoger un objetivo. Si recogen los dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
+      <h4>Carta de Reto</h4><p>Cada capítulo trae un reto extra con premio, distinto en cada capítulo y ligado a la historia: juntar iconos en la Trama, rescatar Civiles o derrotar Matones de más, ganar rápido, que nadie caiga, terminar con fichas sin usar… Algunos piden preparar algo (por ejemplo, recoger 2 objetivos boca abajo). Se revisa al terminar la partida: la app pregunta si lo cumplieron. Si piden contar, el número cambia según jueguen 2 o 3 héroes.</p>
       <h4>La historia se ramifica</h4><p>Ganar o perder lleva a capítulos distintos, con otros villanos y otros lugares. Cada acto tiene un capítulo para cada combinación de resultados. El final hay que ganarlo: si pierden, lo vuelven a jugar con ayuda.</p>
       <h4>Decisiones</h4><p>Cuatro veces en la campaña tendrán que elegir. Las decisiones cambian aliados, cómo empieza el Acto III y cómo termina todo.</p>
       <h4>Mejoras de los héroes</h4><p>Cada héroe gana experiencia al jugar. Desde su segunda partida empieza con 1 ficha de acción propia. Al terminar su segunda partida desbloquea su habilidad definitiva (Venom, Magneto y Mystique la traen desde que se unen). Algunas se usan siempre que se cumple la condición y otras una vez por partida.</p>
@@ -620,7 +641,7 @@
     $("#modal").innerHTML = `<div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="cierreT">
       <p class="sfx sfx-chico">${gano ? "¡Ganamos!" : "Perdimos"}</p>
       <h3 id="cierreT">Antes de seguir la historia</h3>
-      <div class="pregunta"><b>1. Carta de Reto «${esc(c.pistas.titulo)}»: ¿recogieron los dos objetivos?</b>
+      <div class="pregunta"><b>1. Carta de Reto «${esc(c.pistas.titulo)}»: ¿lo cumplieron?</b><span class="nota">${ico(c.pistas.tipo === "objetivos" ? "Recoger los dos objetivos." : condReto(c, P.equipo.length))}</span>
         <div class="fila"><button class="chip ${K.reto === true ? "on" : ""}" data-reto="si">Sí, completamos el reto</button><button class="chip ${K.reto === false ? "on" : ""}" data-reto="no">No</button></div></div>
       ${gano ? "" : `<div class="pregunta"><b>2. ¿Quién quedó fuera de combate al menos una vez?</b><span class="nota">Se marcarán heridos para su próxima partida.</span>
         ${P.equipo.map(h => `<label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> ${esc(HEROES[h].nombre)}</label>`).join("")}</div>`}
