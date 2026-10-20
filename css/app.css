@@ -184,7 +184,7 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 .pasos > li::before { content: counter(paso); grid-row: span 2; font: 400 1.5rem/1 var(--f-sfx); color: var(--caption); }
 .pasos b { font: 700 1rem/1.2 var(--f-titulo); letter-spacing: .04em; text-transform: uppercase; }
 .pasos span, .pasos ul { color: var(--suave); font-size: .95rem; grid-column: 2; }
-.pasos ul { margin: 2px 0 0; padding-left: 18px; color: var(--texto); }
+.pasos ul { margin: 2px 0 0; padding-left: 18px; color: var(--suave); font-size: .95rem; display: flex; flex-direction: column; gap: 2px; }
 
 /* ---------- Mesa ---------- */
 .vacio { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 10px; }

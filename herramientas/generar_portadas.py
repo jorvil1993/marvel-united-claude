@@ -43,6 +43,7 @@ ESTILO = (
     "skin color and silhouette. Use only the character artwork of each reference and ignore its card frame "
     "and name strip. Do not add any other Marvel character. From the location reference use only the place "
     "and its architecture; ignore the card frame, icons, slots and text. "
+    "Family-friendly, all-ages superhero comic tone: no blood, no gore. "
     "Absolutely no text, letters, numbers, logos, titles, speech balloons or watermarks anywhere in the image. "
     "Keep the top 12% and the bottom 25% of the image darker and calmer (sky, shadows, smoke) so a title can be "
     "placed over it later."
@@ -69,7 +70,7 @@ PORTADAS = {
              "with electric sparks; Ghost-Spider and Spider-Ham fall out of a rainbow rift in the sky."),
     "I3AB": ("sabretooth", ["spider-woman", "ghost-spider", "spider-man-2099", "venom"], "brooklyn-bridge",
              "Night, in the dark sewers under the Brooklyn Bridge, the bridge visible through a grate above. "
-             "Sabretooth hunts with a steel net; Venom is cornered and wounded in the shadows. Spider-Woman, "
+             "Sabretooth stalks with a steel net; Venom is cornered in the shadows. Spider-Woman, "
              "Ghost-Spider and Spider-Man 2099 burst in from a glowing dimensional rift to stop the hunter."),
     "I3BA": ("venom", ["black-cat", "spider-man", "ghost-spider"], "osborn-labs",
              "Inside Osborn Laboratories a particle collider overloads in a blinding explosion. A black alien "
@@ -82,7 +83,7 @@ PORTADAS = {
              "dimensional rifts."),
     "II1": ("mystique", ["cyclops", "jean-grey", "spider-man-2099"], "midtown-high",
             "A packed school auditorium with flags and a podium. A middle-aged senator in a grey suit speaks at "
-            "the podium. Among the press, Mystique (blue skin, white dress, red hair) raises a pistol, half of her "
+            "the podium. Among the press, Mystique (blue skin, white dress, red hair) raises a sleek sci-fi blaster, half of her "
             "face still morphing from a reporter's face. Cyclops fires a red optic blast, Jean Grey shields the "
             "senator with a pink telekinetic field and Spider-Man 2099 leaps over the crowd."),
     "II2A": ("sabretooth", ["wolverine", "storm", "spider-woman"], "weapon-x",
@@ -123,13 +124,13 @@ PORTADAS = {
               "abandoned on the bridge."),
     "III2B": ("venom", ["miles-morales", "ghost-spider", "spider-man-2099"], "oscorp-tower",
               "Night at the top of Oscorp Tower. Venom wears a glowing sonic collar around his neck and prowls "
-              "like a guard dog, in pain. Miles Morales, Ghost-Spider and Spider-Man 2099 land on the rooftop "
+              "like a guard dog, looking confused. Miles Morales, Ghost-Spider and Spider-Man 2099 land on the rooftop "
               "to free him. Green city lights below."),
     "III3AA": ("green-goblin", ["spider-man", "mystique-hero", "jean-grey"], "oscorp-tower",
                "The Green Goblin from the reference, now fused with a crimson alien symbiote: red tendrils and "
                "claws grow from his body and a long red tail whips behind him. He stands triumphant on top of "
                "Oscorp Tower in front of giant screens. Spider-Man, Mystique and Jean Grey jump at him under a "
-               "blood-red sky."),
+               "deep crimson sky."),
     "III3AB": ("juggernaut", ["storm", "wolverine"], "xavier-institute",
                "Juggernaut, with glowing crimson cracks spreading over his helmet and red symbiote tendrils on "
                "his shoulders, marches toward the Xavier mansion. Storm strikes him with a huge lightning bolt "
@@ -144,8 +145,8 @@ PORTADAS = {
                "and Spider-Ham, who swings a gigantic cartoon mallet, block his path."),
     "F": ("carnage", ["spider-man", "venom-hero", "storm"], "midtown-high",
           "Final battle at night. Carnage stands on the roof of Midtown High School, red tendrils covering the "
-          "whole building and reaching into a blood-red sky. Spider-Man, Venom and Storm launch the final charge "
-          "together, Storm's lightning illuminating everything. Epic, climactic, heroic."),
+          "whole building and reaching into a deep crimson sky. Spider-Man, Venom and Storm launch the final charge "
+          "together, Storm's lightning illuminating everything. Epic, heroic, hopeful, family-friendly comic cover."),
 }
 
 
@@ -202,7 +203,7 @@ def generar(nodo: str, solo_codex: bool = False) -> Path:
     if not solo_codex:
         destino = siguiente(nodo, "agy")
         try:
-            a11_agy.generar_imagen(texto, destino, referencias=refs, timeout=360)
+            a11_agy.generar_imagen(texto, destino, referencias=refs, timeout=600)
             return destino
         except Exception as e:  # cuota u otro fallo: Codex de respaldo
             print(f"   agy falló ({str(e)[:160]}); voy por Codex", flush=True)

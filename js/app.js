@@ -76,16 +76,7 @@
     const pasos = [];
     pasos.push({ t: `Tablero de ${v.nombre}`, d: `Colócalo arriba de la guía de Misiones con ${v.vida[n]} fichas de Vida (${n} héroes).` });
     pasos.push({ t: "Misiones", d: c.villano === "magneto" ? "Coloca «Usar Cerebro» en lugar de «Rescatar Civiles», más «Derrotar Matones» y «Eliminar Amenazas»." : "Coloca las 3 cartas de Misión en la guía." });
-    const fichasLugar = id => {
-      const l = LUGARES[id], p = [];
-      if (l.civiles) p.push(`${l.civiles} Civil${l.civiles > 1 ? "es" : ""}`);
-      if (l.matones) p.push(`${l.matones} Matón${l.matones > 1 ? "es" : ""}`);
-      const libres = l.espacios - l.civiles - l.matones;
-      return `${l.nombre}: ${p.join(" y ") || "nada"} (quedan ${libres} espacios libres)`;
-    };
-    pasos.push({ t: "Lugares", d: [`Ponlos en círculo en este orden, en sentido horario: ${c.anillo.map((x, i) => L(i)).join(" → ")}.`,
-      "En cada carta, pon una ficha sobre cada espacio impreso con la figura de un Civil (cara blanca) o de un Matón (cara roja con antifaz). Los espacios vacíos quedan libres:"]
-      .concat(c.anillo.map(fichasLugar)), lista: true });
+    pasos.push({ t: "Lugares", d: `En sentido horario: ${c.anillo.map((x, i) => L(i)).join(" → ")}. Llena los espacios impresos en cada Lugar con sus Civiles y Matones.` });
     pasos.push({ t: "Amenazas", d: c.villano === "green-goblin" ? "No coloques Amenazas ni fichas en los Lugares: deja su mazo boca abajo y las fichas aparte (preparación especial del Duende)." : "Baraja las 6 Amenazas y pon 1 boca arriba bajo cada Lugar, con su ficha de Amenaza al lado. Los Secuaces llevan sus fichas de Vida." });
     pasos.push({ t: "Villano", d: `${v.nombre} empieza en ${L(0)}. Baraja su Plan Maestro y déjalo junto a ese Lugar.` });
     const herido = equipo.filter(h => E.heridos.includes(h));
