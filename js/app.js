@@ -91,12 +91,12 @@
     }
     const ev = lineas(c.evento.efectos);
     pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
-    pasos.push({ t: `Pistas: ${c.pistas.titulo}`, d: [
+    pasos.push({ t: `Carta de Reto: ${c.pistas.titulo}`, d: [
       "Toma 2 fichas de Exposición (las del celular, de la caja Spider-Verse).",
       `Pon una boca abajo (mostrando la carcasa negra) sobre la carta de ${LUGARES[c.pistas.lugares[0]].nombre} y la otra sobre la de ${LUGARES[c.pistas.lugares[1]].nombre}, al costado, sin tapar los espacios de Civiles y Matones.`,
-      "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger la Pista y dejarla junto a su mazo. Esa acción no cuenta para ninguna Misión.",
-      "Al terminar, anoten en Partida cuántas recogieron. Con las dos, el villano del próximo capítulo empieza Frenado."
-    ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: las Pistas van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []), lista: true, carta: "pistas" });
+      "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger ese objetivo y dejarlo junto a su mazo. Esa acción no cuenta para ninguna Misión.",
+      "Al terminar, anoten en Partida cuántos recogieron. Si recogen los dos, cumplen el reto y el villano del próximo capítulo empieza Frenado."
+    ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: los objetivos del reto van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []), lista: true, carta: "pistas" });
     const nv = nivelDe(c);
     pasos.push({ t: `Desafío: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
 
@@ -112,7 +112,7 @@
     if (fichas.length) pasos.push({ t: "Fichas iniciales", d: fichas, lista: true });
 
     const ritmo = [];
-    if (E.frenado) ritmo.push("Recogieron todas las Pistas del capítulo anterior: el villano empieza Frenado (ficha verde sobre su mazo).");
+    if (E.frenado) ritmo.push("Cumplieron el reto del capítulo anterior: el villano empieza Frenado (ficha verde sobre su mazo).");
     if (dificultad().id === "facil") ritmo.push("Dificultad Fácil: el villano empieza Frenado.");
     if (E.panico >= 2) ritmo.push(`Pánico (${estadoPanico(E.panico).nombre}): coloca 1 Matón extra en ${L(0)}.`);
     if (E.panico >= 4) ritmo.push("Pánico (Caos): el villano empieza Acelerado (ficha naranja al final de la Trama). Si también está Frenado, se anulan.");
@@ -140,10 +140,10 @@
       const m = [];
       if (i === 0) m.push(`<span class="marca marca-v">Villano</span>`);
       if (i === 3) m.push(`<span class="marca marca-h">Héroes</span>`);
-      if (c.pistas.lugares.includes(id)) m.push(`<span class="marca marca-p">Pista</span>`);
+      if (c.pistas.lugares.includes(id)) m.push(`<span class="marca marca-p">Reto</span>`);
       return `<div class="nodo" style="left:${x}%;top:${y}%"><img src="assets/loc/${id}.jpg" alt="" loading="lazy"><span class="nodo-n">${esc(LUGARES[id].nombre)}</span>${m.join("")}</div>`;
     }).join("");
-    const leyenda = c.anillo.map((id, i) => `<li><b>${esc(LUGARES[id].nombre)}</b>${i === 0 ? ' <span class="chip-mini v">Villano</span>' : ""}${i === 3 ? ' <span class="chip-mini h">Héroes</span>' : ""}${c.pistas.lugares.includes(id) ? ' <span class="chip-mini p">Pista</span>' : ""}<span>${esc((c.notas || {})[id] || "")}</span></li>`).join("");
+    const leyenda = c.anillo.map((id, i) => `<li><b>${esc(LUGARES[id].nombre)}</b>${i === 0 ? ' <span class="chip-mini v">Villano</span>' : ""}${i === 3 ? ' <span class="chip-mini h">Héroes</span>' : ""}${c.pistas.lugares.includes(id) ? ' <span class="chip-mini p">Reto</span>' : ""}<span>${esc((c.notas || {})[id] || "")}</span></li>`).join("");
     return `<div class="anillo" role="img" aria-label="Lugares en sentido horario">
       <div class="anillo-centro"><img src="assets/char/${c.villano}.jpg" alt="${esc(v.nombre)}"></div>
       <svg class="anillo-flecha" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="2 2"/></svg>${nodos}</div>
@@ -195,11 +195,11 @@
     <section class="bloque"><h3 class="titulo-sec">Cartas del capítulo</h3>
       <div class="cartas">
         <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${esc(x)}</li>`).join("")}</ul></article>
-        <article class="carta carta-pistas"><span class="carta-tipo">Pistas</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
+        <article class="carta carta-pistas"><span class="carta-tipo">Carta de Reto</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
           <ol class="carta-pasos">
             <li><b>Preparar:</b> pon 1 ficha de Exposición (el celular) boca abajo sobre ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
-            <li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt="Heroica"> y recoge la Pista. No cuenta para las Misiones.</li>
-            <li><b>Premio:</b> si recogen las dos, el villano del próximo capítulo empieza Frenado.</li>
+            <li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt="Heroica"> y recoge ese objetivo. No cuenta para las Misiones.</li>
+            <li><b>Premio:</b> si recogen los dos, el villano del próximo capítulo empieza Frenado.</li>
           </ol></article>
       </div></section>
     <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
@@ -218,7 +218,7 @@
       `${v.nombre} tiene ${v.vida[P.equipo.length]} de vida. No se le puede dañar hasta completar 2 Misiones.`,
       "Con la 1ª Misión el villano queda Bajo Presión: juega Plan Maestro cada 2 cartas de héroe en vez de 3.",
       "Con la 3ª Misión, cada héroe roba 1 carta.",
-      `Pistas en ${LUGARES[c.pistas.lugares[0]].nombre} y ${LUGARES[c.pistas.lugares[1]].nombre}: 1 acción Heroica para recoger cada una.`
+      `Carta de Reto «${c.pistas.titulo}»: objetivos en ${LUGARES[c.pistas.lugares[0]].nombre} y ${LUGARES[c.pistas.lugares[1]].nombre}; 1 acción Heroica para recoger cada uno.`
     ];
     return `
     <section class="mesa-villano"><img src="assets/char/${c.villano}.jpg" alt="">
@@ -229,11 +229,11 @@
       <div class="mesa-heroes">${P.equipo.map(h => `<article class="mh">${retrato(h)}<div class="mh-txt"><h4>${esc(HEROES[h].nombre)}</h4>
         ${c.identidad && !E.publicos.includes(h) ? `<div class="cont"><span>Exposición al final</span><button class="mini" data-exp="${h}" data-d="-1" aria-label="Restar">−</button><b class="${(P.exp[h] || 0) >= 3 ? "alerta" : ""}">${P.exp[h] || 0}</b><button class="mini" data-exp="${h}" data-d="1" aria-label="Sumar">+</button></div>` : ""}
         <label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> Quedó fuera de combate</label></div></article>`).join("")}</div>
-      <h4 class="sub">Pistas</h4>
+      <h4 class="sub">Carta de Reto: objetivos recogidos</h4>
       <div class="selector">
-        <button class="chip ${P.pistas === 2 ? "on" : ""}" data-pistas="2">Recogimos las dos</button>
-        <button class="chip ${P.pistas === 1 ? "on" : ""}" data-pistas="1">Solo una</button>
-        <button class="chip ${P.pistas === 0 ? "on" : ""}" data-pistas="0">Ninguna</button>
+        <button class="chip ${P.pistas === 2 ? "on" : ""}" data-pistas="2">Los dos</button>
+        <button class="chip ${P.pistas === 1 ? "on" : ""}" data-pistas="1">Solo uno</button>
+        <button class="chip ${P.pistas === 0 ? "on" : ""}" data-pistas="0">Ninguno</button>
       </div></section>
     <section class="bloque resolver"><h3 class="titulo-sec">¿Cómo terminó?</h3>
       ${P.confirmar ? `<div class="confirma"><p>${P.confirmar === "gano" ? `¿Confirman que derrotaron a ${esc(v.nombre)}?` : "¿Confirman que el villano completó su plan?"}</p>
@@ -319,21 +319,21 @@
     if (pestana === "lugares") cuerpo = `<p class="nota">Los 14 Lugares que tienes: 6 de Enter the Spider-Verse y 8 de la caja X-Men.</p>
       <div class="grilla-l">${Object.keys(LUGARES).map(id => `<article class="lugar"><img src="assets/loc/${id}.jpg" alt="Carta de ${esc(LUGARES[id].nombre)}" loading="lazy"><div><span class="etq">${LUGARES[id].caja}</span><h4>${esc(LUGARES[id].nombre)}</h4><p>${esc(LUGARES[id].efecto)}</p></div></article>`).join("")}</div>`;
     if (pestana === "reglas") cuerpo = `<div class="reglas">
-      <h4>Cómo se juega la campaña</h4><p>Usen el celular dos veces por capítulo: al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la Carta de Evento cambia el armado y las Pistas son celulares boca abajo sobre la mesa.</p>
+      <h4>Cómo se juega la campaña</h4><p>Usen el celular dos veces por capítulo: al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la Carta de Evento cambia el armado y la Carta de Reto pone celulares boca abajo sobre la mesa como objetivos.</p>
       <h4>Qué ficha es cada cosa</h4>
       <ul class="leyenda-fichas">
         <li><img src="assets/icons/mover.png" alt=""><span><b>Mover</b> (flecha verde): vas a un Lugar vecino.</span></li>
         <li><img src="assets/icons/atacar.png" alt=""><span><b>Atacar</b> (puño rojo): 1 daño a un Matón, a un Secuaz o al villano (este último, solo con 2 Misiones completas).</span></li>
-        <li><img src="assets/icons/heroica.png" alt=""><span><b>Heroica</b> (estrella amarilla): rescatas 1 Civil de tu Lugar o pones 1 ficha en la Amenaza de tu Lugar. En esta campaña, también recoge Pistas.</span></li>
+        <li><img src="assets/icons/heroica.png" alt=""><span><b>Heroica</b> (estrella amarilla): rescatas 1 Civil de tu Lugar o pones 1 ficha en la Amenaza de tu Lugar. En esta campaña, también recoge los objetivos de la Carta de Reto.</span></li>
         <li><img src="assets/icons/comodin.png" alt=""><span><b>Comodín</b> (cuadros de colores): vale como cualquiera de las tres anteriores.</span></li>
         <li><img src="assets/icons/civil.png" alt=""><span><b>Civil</b> (cara blanca): persona a rescatar.</span></li>
         <li><img src="assets/icons/maton.png" alt=""><span><b>Matón</b> (cara roja con antifaz): enemigo de 1 golpe.</span></li>
         <li><img src="assets/icons/exposicion.png" alt=""><span><b>Exposición</b> (celular, caja Spider-Verse), boca arriba: cuenta para el Desafío Identidad Secreta.</span></li>
-        <li><img src="assets/icons/pista.png" alt=""><span><b>Pista</b>: la misma ficha de Exposición, pero boca abajo (carcasa negra). Solo en esta campaña.</span></li>
+        <li><img src="assets/icons/pista.png" alt=""><span><b>Objetivo del reto</b>: la misma ficha de Exposición, pero boca abajo (carcasa negra). Solo en esta campaña.</span></li>
         <li><img src="assets/icons/periodista.png" alt=""><span><b>Periodista</b> (credencial amarilla): solo con Identidad Secreta.</span></li>
       </ul>
       <p>Las fichas de acción (Mover, Atacar, Heroica, Comodín) que te da la campaña al empezar se guardan junto a tu mazo y se gastan cuando quieras en tu turno.</p>
-      <h4>Pistas</h4><p>Cada capítulo pone 2 fichas de Exposición boca abajo en dos Lugares. Un héroe en ese Lugar puede gastar 1 acción Heroica para recogerla. Si recogen las dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
+      <h4>Carta de Reto</h4><p>Cada capítulo trae un reto con premio: pone 2 fichas de Exposición boca abajo en dos Lugares como objetivos. Un héroe en ese Lugar puede gastar 1 acción Heroica para recoger un objetivo. Si recogen los dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
       <h4>La historia se ramifica</h4><p>Ganar o perder lleva a capítulos distintos, con otros villanos y otros lugares. Cada acto tiene un capítulo para cada combinación de resultados. El final hay que ganarlo: si pierden, lo vuelven a jugar con ayuda.</p>
       <h4>Decisiones</h4><p>Cuatro veces en la campaña tendrán que elegir. Las decisiones cambian aliados, cómo empieza el Acto III y cómo termina todo.</p>
       <h4>Mejoras de los héroes</h4><p>Cada héroe gana experiencia al jugar. Desde su segunda partida empieza con 1 ficha de acción propia; desde la cuarta, también con 1 Comodín.</p>
@@ -418,7 +418,7 @@
     }
     if (P.pistas === 2) {
       if (c.final) E.flags.pistasFinal = true;
-      else { E.frenado = true; avisos.push(`Recogieron las dos pistas de «${c.pistas.titulo}»: el próximo villano empieza Frenado.`); }
+      else { E.frenado = true; avisos.push(`Cumplieron el reto «${c.pistas.titulo}»: el próximo villano empieza Frenado.`); }
     }
     aplicarEfectos(out.efectos, avisos);
     E.historia.push({ nodo: E.nodo, gano, equipo: P.equipo, resumen: out.resumen, fecha: new Date().toISOString() });

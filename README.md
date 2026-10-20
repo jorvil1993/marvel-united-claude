@@ -6,7 +6,7 @@ Campaña narrativa de Marvel United para jugar en familia (2 o 3 héroes), usand
 
 ## Cómo funciona
 
-- **El celular se usa dos veces por capítulo:** al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la *Carta de Evento* cambia el armado y las *Pistas* son celulares boca abajo que se recogen con acciones Heroicas.
+- **El celular se usa dos veces por capítulo:** al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la *Carta de Evento* cambia el armado y la *Carta de Reto* pone objetivos (celulares boca abajo) que se recogen con acciones Heroicas para ganar un premio.
 - **Una historia en árbol:** cada acto tiene un capítulo distinto para cada combinación de victorias y derrotas (23 capítulos en total). Cada partida de la campaña dura 10 capítulos.
 - **Cuatro decisiones** cambian aliados, dónde empieza el Acto III y cómo termina todo. El final hay que ganarlo: si pierden, lo repiten con ayuda.
 - **Tres héroes por capítulo, elegidos por la historia.** Ustedes deciden quién juega con cada uno; si juegan solo dos, uno se queda afuera.
