@@ -76,7 +76,16 @@
     const pasos = [];
     pasos.push({ t: `Tablero de ${v.nombre}`, d: `Colócalo arriba de la guía de Misiones con ${v.vida[n]} fichas de Vida (${n} héroes).` });
     pasos.push({ t: "Misiones", d: c.villano === "magneto" ? "Coloca «Usar Cerebro» en lugar de «Rescatar Civiles», más «Derrotar Matones» y «Eliminar Amenazas»." : "Coloca las 3 cartas de Misión en la guía." });
-    pasos.push({ t: "Lugares", d: `En sentido horario: ${c.anillo.map((x, i) => L(i)).join(" → ")}. Llena los espacios impresos en cada Lugar con sus Civiles y Matones.` });
+    const fichasLugar = id => {
+      const l = LUGARES[id], p = [];
+      if (l.civiles) p.push(`${l.civiles} Civil${l.civiles > 1 ? "es" : ""}`);
+      if (l.matones) p.push(`${l.matones} Matón${l.matones > 1 ? "es" : ""}`);
+      const libres = l.espacios - l.civiles - l.matones;
+      return `${l.nombre}: ${p.join(" y ") || "nada"} (quedan ${libres} espacios libres)`;
+    };
+    pasos.push({ t: "Lugares", d: [`Ponlos en círculo en este orden, en sentido horario: ${c.anillo.map((x, i) => L(i)).join(" → ")}.`,
+      "En cada carta, pon una ficha sobre cada espacio impreso con la figura de un Civil (cara blanca) o de un Matón (cara roja con antifaz). Los espacios vacíos quedan libres:"]
+      .concat(c.anillo.map(fichasLugar)), lista: true });
     pasos.push({ t: "Amenazas", d: c.villano === "green-goblin" ? "No coloques Amenazas ni fichas en los Lugares: deja su mazo boca abajo y las fichas aparte (preparación especial del Duende)." : "Baraja las 6 Amenazas y pon 1 boca arriba bajo cada Lugar, con su ficha de Amenaza al lado. Los Secuaces llevan sus fichas de Vida." });
     pasos.push({ t: "Villano", d: `${v.nombre} empieza en ${L(0)}. Baraja su Plan Maestro y déjalo junto a ese Lugar.` });
     const herido = equipo.filter(h => E.heridos.includes(h));
@@ -91,7 +100,12 @@
     }
     const ev = lineas(c.evento.efectos);
     pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
-    pasos.push({ t: `Pistas: ${c.pistas.titulo}`, d: `Coloca 1 ficha de Exposición boca abajo (el celular) en ${LUGARES[c.pistas.lugares[0]].nombre} y otra en ${LUGARES[c.pistas.lugares[1]].nombre}. Un héroe en un Lugar con Pista puede gastar 1 acción Heroica para recogerla.`, carta: "pistas" });
+    pasos.push({ t: `Pistas: ${c.pistas.titulo}`, d: [
+      "Toma 2 fichas de Exposición (las del celular, de la caja Spider-Verse).",
+      `Pon una boca abajo (mostrando la carcasa negra) sobre la carta de ${LUGARES[c.pistas.lugares[0]].nombre} y la otra sobre la de ${LUGARES[c.pistas.lugares[1]].nombre}, al costado, sin tapar los espacios de Civiles y Matones.`,
+      "Durante la partida, un héroe que esté en ese Lugar puede gastar 1 acción Heroica (la estrella amarilla) para recoger la Pista y dejarla junto a su mazo. Esa acción no cuenta para ninguna Misión.",
+      "Al terminar, anoten en Partida cuántas recogieron. Con las dos, el villano del próximo capítulo empieza Frenado."
+    ].concat(c.identidad ? ["Hoy también se usa el Desafío Identidad Secreta: las Pistas van boca abajo y la Exposición de cada héroe, boca arriba junto a su mazo. Así no se confunden."] : []), lista: true, carta: "pistas" });
     const nv = nivelDe(c);
     pasos.push({ t: `Desafío: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
 
@@ -122,9 +136,8 @@
   const retrato = (id, cls = "") => `<img class="retrato ${cls}" src="assets/char/${id}.jpg" alt="${esc(HEROES[id] ? HEROES[id].nombre : (VILLANOS[id] || {}).nombre || id)}" loading="lazy">`;
   function iconos(h) {
     const i = h.icons;
-    return `<div class="iconos" aria-label="Iconos del mazo">
-      <span class="ic ic-m" title="Mover">${i.m}<small>MOV</small></span><span class="ic ic-a" title="Atacar">${i.a}<small>ATQ</small></span>
-      <span class="ic ic-h" title="Heroica">${i.h}<small>HER</small></span><span class="ic ic-c" title="Comodín">${i.c}<small>COM</small></span></div>`;
+    const uno = (k, img, nombre) => `<span class="ic" title="${nombre}: ${i[k]} en el mazo"><img src="assets/icons/${img}.png" alt=""><b>${i[k]}</b><small>${nombre}</small></span>`;
+    return `<div class="iconos" aria-label="Acciones en sus 12 cartas">${uno("m", "mover", "Mover")}${uno("a", "atacar", "Atacar")}${uno("h", "heroica", "Heroica")}${uno("c", "comodin", "Comodín")}</div>`;
   }
   const caption = (t, cls = "") => `<p class="caption ${cls}">${t}</p>`;
   const estrellas = n => "★".repeat(n) + "☆".repeat(5 - n);
@@ -156,7 +169,8 @@
 
   function portada(c) {
     const v = VILLANOS[c.villano], acto = ACTOS[c.acto];
-    return `<section class="portada" style="background-image:url('assets/villain/${c.villano}-art.jpg')">
+    return `<section class="portada poster" style="background-image:url('assets/villain/${c.villano}-art.jpg')">
+      <img class="poster-img" src="assets/covers/${E.nodo}.jpg" alt="" onerror="this.remove()">
       <div class="portada-num" aria-hidden="true">#${E.historia.filter(h => h.nodo !== "F").length + 1 > 10 ? 10 : E.historia.filter(h => h.nodo !== "F").length + 1}</div>
       <div class="portada-txt"><span class="acto">${acto.nombre} · ${acto.titulo}</span><h2>${esc(c.titulo)}</h2>
       <span class="contra">contra <b>${esc(v.nombre)}</b> · ${estrellas(v.dificultad)}</span></div></section>`;
@@ -191,7 +205,11 @@
       <div class="cartas">
         <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${esc(x)}</li>`).join("")}</ul></article>
         <article class="carta carta-pistas"><span class="carta-tipo">Pistas</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
-          <p class="carta-regla">En ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y ${esc(LUGARES[c.pistas.lugares[1]].nombre)}. Gasta 1 acción Heroica en ese Lugar para recoger cada una. Si recogen las dos, el próximo villano empieza Frenado.</p></article>
+          <ol class="carta-pasos">
+            <li><b>Preparar:</b> pon 1 ficha de Exposición (el celular) boca abajo sobre ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y otra sobre ${esc(LUGARES[c.pistas.lugares[1]].nombre)}.</li>
+            <li><b>Jugar:</b> un héroe en ese Lugar gasta 1 acción Heroica <img class="ic-linea" src="assets/icons/heroica.png" alt="Heroica"> y recoge la Pista. No cuenta para las Misiones.</li>
+            <li><b>Premio:</b> si recogen las dos, el villano del próximo capítulo empieza Frenado.</li>
+          </ol></article>
       </div></section>
     <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
       <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<span>${esc(s.d)}</span>`}</li>`).join("")}</ol></section>
@@ -271,7 +289,7 @@
       const alcanzado = jugados.length || actual;
       const tarjetas = jugados.map(({ h }) => {
         const c = CAPITULOS[h.nodo];
-        return `<li class="hito ${h.gano ? "gano" : "perdio"}"><div class="hito-arte"><img src="assets/char/${c.villano}.jpg" alt="${esc(VILLANOS[c.villano].nombre)}"><span class="sello">${h.gano ? "Victoria" : "Derrota"}</span></div>
+        return `<li class="hito ${h.gano ? "gano" : "perdio"}"><div class="hito-arte"><img src="assets/covers/${h.nodo}.jpg" onerror="this.onerror=null;this.src='assets/char/${c.villano}.jpg'" alt="${esc(VILLANOS[c.villano].nombre)}"><span class="sello">${h.gano ? "Victoria" : "Derrota"}</span></div>
           <div class="hito-txt"><b>${esc(c.titulo)}</b><span>contra ${esc(VILLANOS[c.villano].nombre)}</span>
           <div class="mini-equipo">${h.equipo.map(x => `<img src="assets/char/${x}.jpg" alt="${esc(HEROES[x].nombre)}" title="${esc(HEROES[x].nombre)}">`).join("")}</div>
           ${h.decision ? `<span class="decidido">Decidieron: ${esc(h.decision)}</span>` : ""}</div></li>`;
@@ -311,6 +329,19 @@
       <div class="grilla-l">${Object.keys(LUGARES).map(id => `<article class="lugar"><img src="assets/loc/${id}.jpg" alt="Carta de ${esc(LUGARES[id].nombre)}" loading="lazy"><div><span class="etq">${LUGARES[id].caja}</span><h4>${esc(LUGARES[id].nombre)}</h4><p>${esc(LUGARES[id].efecto)}</p></div></article>`).join("")}</div>`;
     if (pestana === "reglas") cuerpo = `<div class="reglas">
       <h4>Cómo se juega la campaña</h4><p>Usen el celular dos veces por capítulo: al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la Carta de Evento cambia el armado y las Pistas son celulares boca abajo sobre la mesa.</p>
+      <h4>Qué ficha es cada cosa</h4>
+      <ul class="leyenda-fichas">
+        <li><img src="assets/icons/mover.png" alt=""><span><b>Mover</b> (flecha verde): vas a un Lugar vecino.</span></li>
+        <li><img src="assets/icons/atacar.png" alt=""><span><b>Atacar</b> (puño rojo): 1 daño a un Matón, a un Secuaz o al villano (este último, solo con 2 Misiones completas).</span></li>
+        <li><img src="assets/icons/heroica.png" alt=""><span><b>Heroica</b> (estrella amarilla): rescatas 1 Civil de tu Lugar o pones 1 ficha en la Amenaza de tu Lugar. En esta campaña, también recoge Pistas.</span></li>
+        <li><img src="assets/icons/comodin.png" alt=""><span><b>Comodín</b> (cuadros de colores): vale como cualquiera de las tres anteriores.</span></li>
+        <li><img src="assets/icons/civil.png" alt=""><span><b>Civil</b> (cara blanca): persona a rescatar.</span></li>
+        <li><img src="assets/icons/maton.png" alt=""><span><b>Matón</b> (cara roja con antifaz): enemigo de 1 golpe.</span></li>
+        <li><img src="assets/icons/exposicion.png" alt=""><span><b>Exposición</b> (celular, caja Spider-Verse), boca arriba: cuenta para el Desafío Identidad Secreta.</span></li>
+        <li><img src="assets/icons/pista.png" alt=""><span><b>Pista</b>: la misma ficha de Exposición, pero boca abajo (carcasa negra). Solo en esta campaña.</span></li>
+        <li><img src="assets/icons/periodista.png" alt=""><span><b>Periodista</b> (credencial amarilla): solo con Identidad Secreta.</span></li>
+      </ul>
+      <p>Las fichas de acción (Mover, Atacar, Heroica, Comodín) que te da la campaña al empezar se guardan junto a tu mazo y se gastan cuando quieras en tu turno.</p>
       <h4>Pistas</h4><p>Cada capítulo pone 2 fichas de Exposición boca abajo en dos Lugares. Un héroe en ese Lugar puede gastar 1 acción Heroica para recogerla. Si recogen las dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
       <h4>La historia se ramifica</h4><p>Ganar o perder lleva a capítulos distintos, con otros villanos y otros lugares. Cada acto tiene un capítulo para cada combinación de resultados. El final hay que ganarlo: si pierden, lo vuelven a jugar con ayuda.</p>
       <h4>Decisiones</h4><p>Cuatro veces en la campaña tendrán que elegir. Las decisiones cambian aliados, cómo empieza el Acto III y cómo termina todo.</p>

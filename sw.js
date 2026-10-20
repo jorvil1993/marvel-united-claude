@@ -1,4 +1,4 @@
-const VERSION = 'tm-202610200814';
+const VERSION = 'tm-202610200854';
 const IMAGENES = [
   'assets/char/beast.jpg',
   'assets/char/black-cat.jpg',
@@ -23,8 +23,18 @@ const IMAGENES = [
   'assets/char/venom-hero.jpg',
   'assets/char/venom.jpg',
   'assets/char/wolverine.jpg',
+  'assets/covers/I1.jpg',
+  'assets/icons/atacar.png',
+  'assets/icons/civil.png',
+  'assets/icons/comodin.png',
+  'assets/icons/exposicion.png',
+  'assets/icons/heroica.png',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
+  'assets/icons/maton.png',
+  'assets/icons/mover.png',
+  'assets/icons/periodista.png',
+  'assets/icons/pista.png',
   'assets/loc/asteroid-m.jpg',
   'assets/loc/brooklyn-bridge.jpg',
   'assets/loc/daily-bugle.jpg',

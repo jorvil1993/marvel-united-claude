@@ -4,20 +4,20 @@
    La historia es un árbol: cada combinación de victorias y derrotas dentro de un acto lleva a un capítulo distinto. */
 
 const LUGARES = {
-  "queens":           { nombre: "Queens", caja: "Spider-Verse", efecto: "Si tienes 1 o 2 cartas en tu mano, puedes robar una carta." },
-  "oscorp-tower":     { nombre: "Oscorp Tower", caja: "Spider-Verse", efecto: "Puedes obtener una ficha de Movimiento." },
-  "brooklyn-bridge":  { nombre: "Brooklyn Bridge", caja: "Spider-Verse", efecto: "Puedes añadir un Civil a cualquier Lugar. Entonces, rescata a un Civil de este Lugar." },
-  "midtown-high":     { nombre: "Midtown High School", caja: "Spider-Verse", efecto: "Puedes obtener una ficha Heroica." },
-  "daily-bugle":      { nombre: "Daily Bugle", caja: "Spider-Verse", efecto: "Descubre la carta superior del mazo de Plan Maestro. Puedes colocarla en la parte inferior del mazo." },
-  "osborn-labs":      { nombre: "Osborn Laboratories", caja: "Spider-Verse", efecto: "Puedes obtener una ficha de Ataque." },
-  "hangar-bay":       { nombre: "Hangar Bay", caja: "X-Men", efecto: "Puedes coger una ficha de Movimiento, Heroica o de Ataque." },
-  "weapon-x":         { nombre: "Weapon X Facility", caja: "X-Men", efecto: "Puedes descartar una carta de tu mano al final de tu mazo para obtener 2 fichas de Ataque." },
-  "xavier-institute": { nombre: "Xavier Institute", caja: "X-Men", efecto: "Puedes robar cartas hasta que tengas 3 en tu mano." },
-  "muir-island":      { nombre: "Muir Island", caja: "X-Men", efecto: "Otro Héroe en este Lugar o en uno adyacente puede robar 1 carta." },
-  "x-jet":            { nombre: "X-Jet", caja: "X-Men", efecto: "Puedes moverte a cualquier otro Lugar." },
-  "genosha":          { nombre: "Genosha", caja: "X-Men", efecto: "Puedes rescatar a un Civil de este Lugar." },
-  "asteroid-m":       { nombre: "Asteroid M", caja: "X-Men", efecto: "Puedes infligir un punto de daño a un Matón o a un Secuaz en cualquier Lugar." },
-  "sentinel-station": { nombre: "Sentinel Space Station", caja: "X-Men", efecto: "Puedes descartar una carta de tu mano al final de tu mazo para intercambiar una carta de tu mano con una de tus cartas boca arriba en la Trama." }
+  "queens":           { nombre: "Queens", caja: "Spider-Verse", espacios: 5, civiles: 2, matones: 0, efecto: "Si tienes 1 o 2 cartas en tu mano, puedes robar una carta." },
+  "oscorp-tower":     { nombre: "Oscorp Tower", caja: "Spider-Verse", espacios: 4, civiles: 1, matones: 1, efecto: "Puedes obtener una ficha de Movimiento." },
+  "brooklyn-bridge":  { nombre: "Brooklyn Bridge", caja: "Spider-Verse", espacios: 4, civiles: 1, matones: 1, efecto: "Puedes añadir un Civil a cualquier Lugar. Entonces, rescata a un Civil de este Lugar." },
+  "midtown-high":     { nombre: "Midtown High School", caja: "Spider-Verse", espacios: 4, civiles: 1, matones: 1, efecto: "Puedes obtener una ficha Heroica." },
+  "daily-bugle":      { nombre: "Daily Bugle", caja: "Spider-Verse", espacios: 4, civiles: 2, matones: 0, efecto: "Descubre la carta superior del mazo de Plan Maestro. Puedes colocarla en la parte inferior del mazo." },
+  "osborn-labs":      { nombre: "Osborn Laboratories", caja: "Spider-Verse", espacios: 3, civiles: 0, matones: 1, efecto: "Puedes obtener una ficha de Ataque." },
+  "hangar-bay":       { nombre: "Hangar Bay", caja: "X-Men", espacios: 4, civiles: 1, matones: 1, efecto: "Puedes coger una ficha de Movimiento, Heroica o de Ataque." },
+  "weapon-x":         { nombre: "Weapon X Facility", caja: "X-Men", espacios: 4, civiles: 0, matones: 2, efecto: "Puedes descartar una carta de tu mano al final de tu mazo para obtener 2 fichas de Ataque." },
+  "xavier-institute": { nombre: "Xavier Institute", caja: "X-Men", espacios: 5, civiles: 2, matones: 1, efecto: "Puedes robar cartas hasta que tengas 3 en tu mano." },
+  "muir-island":      { nombre: "Muir Island", caja: "X-Men", espacios: 3, civiles: 1, matones: 0, efecto: "Otro Héroe en este Lugar o en uno adyacente puede robar 1 carta." },
+  "x-jet":            { nombre: "X-Jet", caja: "X-Men", espacios: 3, civiles: 1, matones: 0, efecto: "Puedes moverte a cualquier otro Lugar." },
+  "genosha":          { nombre: "Genosha", caja: "X-Men", espacios: 5, civiles: 2, matones: 1, efecto: "Puedes rescatar a un Civil de este Lugar." },
+  "asteroid-m":       { nombre: "Asteroid M", caja: "X-Men", espacios: 4, civiles: 1, matones: 1, efecto: "Puedes infligir un punto de daño a un Matón o a un Secuaz en cualquier Lugar." },
+  "sentinel-station": { nombre: "Sentinel Space Station", caja: "X-Men", espacios: 3, civiles: 0, matones: 1, efecto: "Puedes descartar una carta de tu mano al final de tu mazo para intercambiar una carta de tu mano con una de tus cartas boca arriba en la Trama." }
 };
 
 /* Iconos contados en las 12 cartas reales de cada mazo: m mover, a atacar, h heroica, c comodín.
@@ -204,7 +204,7 @@ const CAPITULOS = {
     "Esta noche, en Queens, la tía May le sirve a Miles un segundo plato de lasaña cuando alguien golpea la ventana del cuarto de Peter. Es Felicia Hardy, Black Cat, y viene furiosa: le pagaron por robar la Muestra 7 y alguien llegó primero. «Rhino está atravesando las paredes de Oscorp como si fueran de papel», dice. «Yo no trabajo gratis, pero hoy hago una excepción.»",
     "Peter, Miles y Felicia salen por la ventana antes de que la tía May termine de preguntar adónde van. Alguien le pagó a Rhino el triple por sacar un solo contenedor, y Felicia quiere saber quién."
   ],
-  evento: { titulo: "Puerta derribada", texto: "Rhino lleva diez minutos adentro cuando ustedes llegan.", efectos: ["Coloca 1 Matón extra en Oscorp Tower (si no cabe, aplica el Exceso de Rhino)."] },
+  evento: { titulo: "Puerta derribada", texto: "Rhino lleva diez minutos adentro cuando ustedes llegan.", efectos: ["Coloca 1 Matón extra en Oscorp Tower (cabe: Oscorp tiene 2 espacios libres al empezar)."] },
   pistas: { titulo: "El comprador", texto: "Felicia quiere saber quién contrató a Rhino. Hay rastros del comprador en el laboratorio de Osborn y en el camión del puente.", lugares: ["osborn-labs", "brooklyn-bridge"] },
   victoria: {
     titulo: "Contenedor recuperado",
