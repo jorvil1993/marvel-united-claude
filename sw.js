@@ -1,4 +1,4 @@
-const VERSION = 'tm-202610200955';
+const VERSION = 'tm-202610200959';
 const IMAGENES = [
   'assets/char/beast.jpg',
   'assets/char/black-cat.jpg',

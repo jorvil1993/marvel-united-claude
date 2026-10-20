@@ -448,3 +448,10 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 /* Uniformidad: sin negrita en el cuerpo de las cartas del capítulo */
 .carta p, .carta li { font-weight: 400; }
 .carta-pasos b { font-weight: 400; }
+
+/* Íconos en el texto: recuadro blanco para que se vean sobre fondo oscuro */
+.ic-linea { width: 22px; height: 20px; padding: 2px; margin: 0 2px; background: #fff; border: 1.5px solid #000; border-radius: 5px; vertical-align: -5px; box-sizing: border-box; }
+.ic img { width: 26px; height: 22px; padding: 2px; background: #fff; border: 1.5px solid #000; border-radius: 5px; box-sizing: border-box; }
+.leyenda-fichas img { padding: 3px; background: #fff; border: 2px solid #000; border-radius: 7px; box-sizing: border-box; }
+/* El anillo baja para que la etiqueta del primer Lugar no tape el título */
+.anillo { margin-top: 34px; }
