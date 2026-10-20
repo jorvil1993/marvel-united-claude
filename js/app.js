@@ -395,6 +395,8 @@
       <p class="nota">La campaña se guarda en este celular. Para pasarla a otro, exporta el archivo y luego impórtalo allá.</p>
       <div class="fila"><button class="btn-sec" id="btnExportar">Exportar campaña</button><label class="btn-sec archivo-in">Importar campaña<input type="file" id="inImportar" accept="application/json"></label></div>
       <p class="nota" id="msgRespaldo" role="status"></p>
+      <button class="btn-sec" id="btnActualizar">Forzar actualización de la app</button>
+      <p class="nota">Úsalo si no ves los últimos cambios. Tu campaña no se borra.</p>
       ${confirmarReinicio ? `<div class="confirma"><p>Esto borra toda la campaña y vuelve al primer capítulo.</p><div class="fila"><button class="btn rojo" id="btnReinicioSi">Sí, empezar de cero</button><button class="btn-sec" id="btnReinicioNo">Cancelar</button></div></div>`
         : `<button class="btn-sec peligro" id="btnReiniciar">Empezar la campaña de cero</button>`}</section>`;
   }
@@ -529,6 +531,15 @@
     if (t.id === "btnReiniciar") { confirmarReinicio = true; return render(); }
     if (t.id === "btnReinicioNo") { confirmarReinicio = false; return render(); }
     if (t.id === "btnReinicioSi") { confirmarReinicio = false; const j = E.jugadores; E = estadoInicial(); E.jugadores = j; guardar(); return ir("historia"); }
+    if (t.id === "btnActualizar") {
+      t.textContent = "Actualizando…";
+      (async () => {
+        try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) { /* sigue */ }
+        try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* sigue */ }
+        location.replace(location.pathname + "?v=" + Date.now());
+      })();
+      return;
+    }
     if (t.id === "btnExportar") {
       const blob = new Blob([JSON.stringify(E, null, 2)], { type: "application/json" });
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `telarana-mutante-${E.nodo}.json`; a.click();
@@ -557,5 +568,10 @@
   });
 
   render();
-  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  if ("serviceWorker" in navigator) {
+    let recargando = false;
+    const habiaControl = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (habiaControl && !recargando) { recargando = true; location.reload(); } });
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => r.update()).catch(() => {}));
+  }
 })();

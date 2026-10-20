@@ -1,4 +1,4 @@
-const VERSION = 'tm-202610200959';
+const VERSION = 'tm-202610201000';
 const IMAGENES = [
   'assets/char/beast.jpg',
   'assets/char/black-cat.jpg',
@@ -69,7 +69,7 @@ const IMAGENES = [
 const NUCLEO = ['./', 'index.html', 'css/app.css', 'js/data.js', 'js/app.js', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(NUCLEO.concat(IMAGENES))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(NUCLEO.map(u => new Request(u, { cache: 'reload' })).concat(IMAGENES))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -84,7 +84,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.match(req).then(r => r || fetch(req).then(res => { const copia = res.clone(); caches.open(VERSION).then(c => c.put(req, copia)); return res; })));
     return;
   }
-  e.respondWith(fetch(req).then(res => {
+  e.respondWith(fetch(req, { cache: 'no-store' }).then(res => {
     if (res.ok && new URL(req.url).origin === location.origin) { const copia = res.clone(); caches.open(VERSION).then(c => c.put(req, copia)); }
     return res;
   }).catch(() => caches.match(req).then(r => r || caches.match('index.html'))));
