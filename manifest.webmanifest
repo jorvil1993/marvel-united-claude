@@ -1,10 +1,10 @@
 {
-  "id": "/marvel-united-claude/",
+  "id": "/marvel-united-claude/telarana-mutante-app",
   "name": "Telaraña Mutante — Marvel United (versión Claude)",
   "short_name": "Telaraña Mutante",
   "description": "Campaña narrativa de Marvel United con Spider-Verse y X-Men.",
   "lang": "es",
-  "start_url": "/marvel-united-claude/",
+  "start_url": "/marvel-united-claude/?app=1",
   "scope": "/marvel-united-claude/",
   "display": "standalone",
   "orientation": "portrait",
