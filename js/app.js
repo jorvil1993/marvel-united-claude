@@ -99,7 +99,12 @@
     if (c.villano === "mystique") pasos.push({ t: "Senador Kelly", d: `Coloca su ficha en ${L(3)}, con los Héroes.` });
     if (c.villano === "sabretooth") pasos.push({ t: "Cazado", d: `${HEROES[c.primero].nombre} empieza la partida y recibe la ficha de Cazado.` });
     if (c.villano === "carnage") pasos.push({ t: "Medidor de engendros", d: `Coloca el indicador en la casilla ${E.flags.sonico === "usar" ? 0 : clamp(E.carnage, 0, 3)}.` });
-    if (["rhino", "venom", "carnage"].includes(c.villano)) pasos.push({ t: "Fichas de Crisis", d: "Tenlas a mano (vienen en la caja X-Men)." });
+    const crisis = {
+      rhino: "Contra Rhino: cuando un héroe queda fuera de combate, toma 1 ficha de Crisis y juega su próxima carta boca abajo (después la descarta).",
+      venom: "Contra Venom: su ¡BAM! da 1 ficha de Crisis a cada héroe en su Lugar, y sus Amenazas dan más. Cada héroe guarda sus Crisis junto a su mazo: con 8 (o con 6 si juegan 3) queda fuera del juego. Si un héroe ya tiene alguna, el daño del ¡BAM! es 2 en vez de 1.",
+      carnage: "Contra Carnage: su ¡BAM! pone 1 ficha de Crisis encima de cada Civil de su Lugar. Esos Civiles están infectados: rescátenlos antes de que el Exceso los descarte y suba el medidor de engendros."
+    };
+    if (crisis[c.villano]) pasos.push({ t: "Fichas de Crisis", d: ["Tenlas a mano: son las fichas de Crisis de la caja X-Men.", crisis[c.villano]], lista: true });
     if (c.identidad) {
       const exp = equipo.filter(h => (E.exposicion[h] || 0) > 0 && !E.publicos.includes(h));
       pasos.push({ t: "Desafío Identidad Secreta", d: [

@@ -330,7 +330,7 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 }
 .carta h4 { font: 800 1.3rem/1.05 var(--f-titulo); text-transform: uppercase; }
 .carta p { margin: 0; font-size: .95rem; }
-.carta ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.carta ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: .92rem; }
 .carta-tipo { align-self: flex-start; font: 400 1rem/1 var(--f-sfx); letter-spacing: .06em; padding: 4px 8px 3px; border: 2px solid #000; transform: rotate(-2deg); }
 .carta-evento { background: linear-gradient(160deg, #3a1420, var(--panel) 65%); }
 .carta-evento .carta-tipo { background: var(--rojo); color: #fff; }
@@ -444,3 +444,7 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 @keyframes temblor { 0%, 100% { transform: none; } 25% { transform: translate(-6px, 4px); } 50% { transform: translate(5px, -4px); } 75% { transform: translate(-3px, 2px); } }
 @keyframes puffVillano { from { transform: rotate(3deg) scale(.5); opacity: 0; filter: blur(8px); } 60% { transform: rotate(3deg) scale(1.1); opacity: 1; filter: blur(0); } to { transform: rotate(3deg) scale(1); opacity: 1; } }
 @keyframes humo { 0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.8); } }
+
+/* Uniformidad: sin negrita en el cuerpo de las cartas del capítulo */
+.carta p, .carta li { font-weight: 400; }
+.carta-pasos b { font-weight: 400; }
