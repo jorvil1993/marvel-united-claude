@@ -1,0 +1,15 @@
+# Despliegue en Netlify: HTML/CSS/JS puro, sin build.
+# Conectado a GitHub (jorvil1993/telarana-mutante): cada git push a main publica solo.
+[build]
+  publish = "."
+  command = ""
+
+# El service worker y el código se piden siempre frescos para que la app se actualice.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/*.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"

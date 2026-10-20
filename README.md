@@ -2,7 +2,7 @@
 
 Campaña narrativa de Marvel United para jugar en familia (2 o 3 héroes), usando solo el material de la caja X-Men y la caja Enter the Spider-Verse.
 
-**Jugar:** https://jorvil1993.github.io/telarana-mutante/
+**Jugar:** https://telarana-mutante.netlify.app/ (también en https://jorvil1993.github.io/telarana-mutante/)
 
 ## Cómo funciona
 
