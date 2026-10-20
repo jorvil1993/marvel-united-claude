@@ -325,7 +325,7 @@ const CAPITULOS = {
     "Peter quedó molido después de pelear con Venom, así que Miles va al frente. Cuando llegan, el colisionador ya está encendido: el cielo sobre Osborn Laboratories se abre en grietas de colores. De una cae una chica con capucha blanca. Detrás de ella aterriza, de cabeza, un cerdo con antifaz."
   ],
   evento: { titulo: "Grietas en el cielo", texto: "Gwen Stacy (Ghost-Spider) y Peter Porker (Spider-Ham) se unen desde el principio. Por las grietas también cruzan matones de otros mundos.", efectos: ["Coloca 1 Matón extra en Osborn Laboratories."] },
-  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] , premio: "La red eléctrica de Osborn quedó a su favor: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3." },
+  pistas: { titulo: "Cortar la corriente", texto: "El colisionador se alimenta de la subestación de Oscorp y de los cables del puente. Si cortan los dos, se apaga.", lugares: ["oscorp-tower", "brooklyn-bridge"] , premio: "La red eléctrica de Osborn quedó a su favor: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3.", premioRobo: 1 },
   victoria: {
     titulo: "La grieta se cierra",
     texto: [
@@ -709,7 +709,7 @@ const CAPITULOS = {
     "Jean puede usar Cerebro a distancia para llegar a la mente de Erik, pero necesita tiempo. Hank prepara el X-Jet en Hangar Bay. Peter insiste en ir: «Si esa cosa cae sobre Washington, la próxima ley va a ser contra todos nosotros.»"
   ],
   evento: { titulo: "Refugiados", texto: "Erik dice que lo hace por los mutantes que se esconden en Genosha.", efectos: ["Coloca 1 Civil extra en Genosha."] },
-  pistas: { titulo: "Apagar los Centinelas", texto: "Los Centinelas se controlan desde Asteroid M y reciben órdenes de Cerebro. Si cortan las dos señales, no despiertan nunca.", lugares: ["asteroid-m", "xavier-institute"] , premio: "Los Centinelas duermen para siempre y la alianza respira: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3." },
+  pistas: { titulo: "Apagar los Centinelas", texto: "Los Centinelas se controlan desde Asteroid M y reciben órdenes de Cerebro. Si cortan las dos señales, no despiertan nunca.", lugares: ["asteroid-m", "xavier-institute"] , premio: "Los Centinelas duermen para siempre y la alianza respira: en el próximo capítulo, cada héroe roba 4 cartas al empezar en vez de 3.", premioRobo: 1 },
   victoria: {
     titulo: "La estación se apaga",
     texto: [

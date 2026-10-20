@@ -93,7 +93,9 @@
     pasos.push({ t: "Amenazas", d: c.villano === "green-goblin" ? "No coloques Amenazas ni fichas en los Lugares: deja su mazo boca abajo y las fichas aparte (preparación especial del Duende)." : "Baraja las 6 Amenazas y pon 1 boca arriba bajo cada Lugar, con su ficha de Amenaza al lado. Los Secuaces llevan sus fichas de Vida." });
     pasos.push({ t: "Villano", d: `${v.nombre} empieza en ${L(0)}. Baraja su Plan Maestro y déjalo junto a ese Lugar.` });
     const herido = equipo.filter(h => E.heridos.includes(h));
-    pasos.push({ t: "Héroes", d: `Todos empiezan en ${L(3)}, el Lugar opuesto al villano. Cada jugador baraja su mazo y roba 3 cartas${herido.length ? ` (${herido.map(h => HEROES[h].nombre).join(" y ")} roba${herido.length > 1 ? "n" : ""} 2: está${herido.length > 1 ? "n" : ""} herido${herido.length > 1 ? "s" : ""})` : ""}.` });
+    const premioRobo = E.pendientes.find(p => p.robo);
+    const base = 3 + (premioRobo ? 1 : 0);
+    pasos.push({ t: "Héroes", d: `Todos empiezan en ${L(3)}, el Lugar opuesto al villano. Cada jugador baraja su mazo y roba ${base} cartas${premioRobo ? ` (en vez de las 3 normales: es el ${premioRobo.de.charAt(0).toLowerCase() + premioRobo.de.slice(1)})` : ""}${herido.length ? `. ${herido.map(h => HEROES[h].nombre).join(" y ")} roba${herido.length > 1 ? "n" : ""} ${base - 1} porque está${herido.length > 1 ? "n" : ""} herido${herido.length > 1 ? "s" : ""}` : ""}.` });
     if (c.villano === "mystique") pasos.push({ t: "Senador Kelly", d: `Coloca su ficha en ${L(3)}, con los Héroes.` });
     if (c.villano === "sabretooth") pasos.push({ t: "Cazado", d: `${HEROES[c.primero].nombre} empieza la partida y recibe la ficha de Cazado.` });
     if (c.villano === "carnage") pasos.push({ t: "Medidor de engendros", d: `Coloca el indicador en la casilla ${E.flags.sonico === "usar" ? 0 : clamp(E.carnage, 0, 3)}.` });
@@ -125,7 +127,7 @@
     });
     if (E.ayuda) fichas.push("La alianza se reagrupa tras la derrota: cada héroe, 1 ficha Comodín.");
     if (dificultad().id === "facil") fichas.push("Dificultad Fácil: cada héroe, 1 ficha Comodín.");
-    E.pendientes.forEach(p => fichas.push(`${p.de}: ${p.texto}`));
+    E.pendientes.filter(p => !p.robo).forEach(p => fichas.push(`${p.de}: ${p.texto}`));
     if (c.final && E.panico <= 1) fichas.push("La ciudad confía en ustedes: cada héroe, 1 ficha Comodín.");
     if (fichas.length) pasos.push({ t: "Ventajas y fichas iniciales", d: fichas, lista: true });
 
@@ -425,7 +427,7 @@
     if (P.cierre.reto) {
       if (c.final) E.flags.pistasFinal = true;
       else if (c.pistas.premioEfectos) { avisos.push(`Cumplieron el reto «${c.pistas.titulo}».`); aplicarEfectos(c.pistas.premioEfectos, avisos); }
-      else { E.pendientes.push({ de: `Premio del reto «${c.pistas.titulo}»`, texto: accionDePremio(c.pistas.premio) }); avisos.push(`Cumplieron el reto «${c.pistas.titulo}». Premio para el próximo capítulo: ${accionDePremio(c.pistas.premio)}`); }
+      else { E.pendientes.push({ de: `Premio del reto «${c.pistas.titulo}»`, texto: accionDePremio(c.pistas.premio), robo: c.pistas.premioRobo || 0 }); avisos.push(`Cumplieron el reto «${c.pistas.titulo}». Premio para el próximo capítulo: ${accionDePremio(c.pistas.premio)}`); }
     }
     aplicarEfectos(out.efectos, avisos);
     E.historia.push({ nodo: E.nodo, gano, equipo: P.equipo, resumen: out.resumen, fecha: new Date().toISOString() });
