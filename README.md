@@ -1,17 +1,21 @@
 # Telaraña Mutante — Marvel United (versión Claude)
 
-Campaña narrativa de 10 capítulos para Marvel United, pensada para jugar en pareja (con un tercer héroe opcional), usando solo el material de la caja X-Men y la caja Enter the Spider-Verse.
+Campaña narrativa de Marvel United para jugar en familia (2 o 3 héroes), usando solo el material de la caja X-Men y la caja Enter the Spider-Verse.
 
 **Jugar:** https://jorvil1993.github.io/marvel-united-claude/
 
-## Qué la hace distinta
+## Cómo funciona
 
-- **Solo tu material:** 14 Lugares, 15 héroes y 8 villanos de las dos cajas. Nada que imprimir.
-- **Reglas oficiales intactas:** «Bajo Presión» y «Acelerado» significan lo que dice el reglamento; ningún evento daña al villano antes de completar 2 Misiones.
-- **Cada villano con su mecánica:** el Senador Kelly de Mystique, la Misión Usar Cerebro de Magneto, la ficha de Cazado de Sabretooth, el medidor de engendros de Carnage y la preparación especial del Duende Verde.
-- **La historia sigue ganes o pierdas**, y perder deja secuelas reales en la mesa: Pánico en Nueva York, héroes heridos, Exposición que se arrastra entre capítulos y villanos que empiezan Acelerados.
-- **Dos decisiones** que cambian el final: qué hacer con Eddie Brock y si aceptar a Magneto.
-- **Dificultad adaptativa sin azar**, con las cartas de Desafío Moderado, Difícil y Heroico de la caja.
-- **Preparación calculada** para cada capítulo: lugares en sentido horario, dónde va cada uno, Periodistas, fichas especiales y consecuencias.
+- **El celular se usa dos veces por capítulo:** al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la *Carta de Evento* cambia el armado y las *Pistas* son celulares boca abajo que se recogen con acciones Heroicas.
+- **Una historia en árbol:** cada acto tiene un capítulo distinto para cada combinación de victorias y derrotas (23 capítulos en total). Cada partida de la campaña dura 10 capítulos.
+- **Cuatro decisiones** cambian aliados, dónde empieza el Acto III y cómo termina todo. El final hay que ganarlo: si pierden, lo repiten con ayuda.
+- **Tres héroes por capítulo, elegidos por la historia.** Ustedes deciden quién juega con cada uno; si juegan solo dos, uno se queda afuera.
+- **Mejoras:** cada héroe gana experiencia y empieza con fichas propias desde su segunda partida.
+- **Dificultad ajustable** (Fácil, Normal, Desafiante, Experto) con las cartas de Desafío oficiales.
+- **Mapa de la campaña** con el camino recorrido, sin revelar lo que falta.
+
+## Reglas intactas
+
+«Bajo Presión» y «Acelerado» significan lo que dice el reglamento. Ningún efecto daña al villano antes de completar 2 Misiones. Cada villano usa su mecánica oficial: el Senador Kelly de Mystique, la Misión Usar Cerebro de Magneto, la ficha de Cazado de Sabretooth, el medidor de engendros de Carnage y la preparación especial del Duende Verde.
 
 Las imágenes salen de los PDF de las cajas. Funciona sin internet una vez instalada.

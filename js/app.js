@@ -1,20 +1,21 @@
-/* Telaraña Mutante — motor de campaña y pantallas */
+/* Telaraña Mutante — motor de campaña y pantallas (v2)
+   Flujo: el celular se usa al preparar la mesa y al terminar la partida. Nada se revela a mitad del juego. */
 (function () {
   "use strict";
 
-  const CLAVE = "telarana-mutante-v1";
+  const CLAVE = "telarana-mutante-v2";
   const MISIONES = ["Rescatar Civiles", "Derrotar Matones", "Eliminar Amenazas"];
 
   /* ---------- Estado ---------- */
   function estadoInicial() {
     return {
-      v: 1, cap: 1, fase: "prep",
-      jugadores: ["Jorge", "Esposa"],
-      panico: 0, ajuste: 0, racha: 0, carnage: 0,
-      flags: {}, disponibles: [],
-      exposicion: {}, publicos: [], heridos: [],
-      pendientes: [], recompensa: null,
-      prep: null, partida: null, resultado: null,
+      v: 2, nodo: "I1", fase: "prep",
+      jugadores: ["Jorge", "Carol", "José"],
+      dificultad: "normal",
+      panico: 0, carnage: 0, flags: {}, xp: {},
+      heridos: [], exposicion: {}, publicos: [],
+      pendientes: [], ayuda: false, frenado: false,
+      asignacion: null, partida: null, resultado: null, decision: null,
       historia: []
     };
   }
@@ -24,497 +25,420 @@
       const raw = localStorage.getItem(CLAVE);
       if (raw) return Object.assign(estadoInicial(), JSON.parse(raw));
     } catch (e) { /* almacenamiento bloqueado: se juega sin guardar */ }
-    const s = estadoInicial();
-    desbloquear(s, CAPITULOS[0].llegan);
-    return s;
+    return estadoInicial();
   }
   function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(E)); } catch (e) { /* sin guardado */ } }
-  function desbloquear(s, ids) { (ids || []).forEach(id => { if (!s.disponibles.includes(id)) s.disponibles.push(id); }); }
 
-  const cap = () => CAPITULOS.find(c => c.id === E.cap);
   const esc = t => String(t).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   const $ = s => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const cap = (id = E.nodo) => CAPITULOS[id];
+
+  /* ---------- Condiciones de texto ---------- */
+  function cumple(x) {
+    if (typeof x === "string") return true;
+    if (x.si) return Object.entries(x.si).every(([k, v]) => E.flags[k] === v);
+    if (x.vio) return E.historia.some(h => CAPITULOS[h.nodo] && CAPITULOS[h.nodo].villano === x.vio);
+    return true;
+  }
+  const texto = x => typeof x === "string" ? x : x.t;
+  const lineas = arr => (arr || []).filter(cumple).map(texto);
+  const resolverHeroe = h => typeof h === "string" ? h : (Object.entries(h.si).every(([k, v]) => E.flags[k] === v) ? h.h : h.no);
+  const heroesDe = c => c.heroes.map(resolverHeroe);
 
   /* ---------- Reglas de campaña ---------- */
-  function heroeFijo(c) {
-    if (c.fijoAlterno && E.flags.magneto !== "aliado") return c.fijoAlterno;
-    return c.fijo;
-  }
+  const dificultad = () => DIFICULTADES.find(d => d.id === E.dificultad) || DIFICULTADES[1];
   function nivelDe(c) {
-    let n = c.nivel + E.ajuste;
+    let n = (c.nivel || 0) + dificultad().ajuste;
     if (c.final && E.panico >= 3) n += 1;
     return clamp(n, 0, 3);
   }
+  function nivelHeroe(h) { const x = E.xp[h] || 0; return x >= 3 ? 3 : x >= 1 ? 2 : 1; }
   function estadoPanico(p) {
     if (p <= 1) return { nombre: "Calma", texto: "Sin efecto en la mesa." };
-    if (p <= 3) return { nombre: "Tensión", texto: "Al preparar, coloca 1 Matón extra en el Lugar inicial del villano." };
-    return { nombre: "Caos", texto: "Al preparar, coloca 1 Matón extra en el Lugar inicial del villano y el villano empieza Acelerado." };
+    if (p <= 3) return { nombre: "Tensión", texto: "Al preparar, se coloca 1 Matón extra en el Lugar inicial del villano." };
+    return { nombre: "Caos", texto: "Al preparar, se coloca 1 Matón extra en el Lugar inicial del villano y el villano empieza Acelerado." };
   }
-  function prepActual() {
+  function asignacion() {
     const c = cap();
-    if (!E.prep || E.prep.cap !== c.id) {
-      const fijo = heroeFijo(c);
-      const equipo = [fijo];
-      if (c.fijo2) equipo.push(c.fijo2);
-      else {
-        const rec = c.recomendados.find(h => E.disponibles.includes(h) && h !== fijo);
-        equipo.push(rec || E.disponibles.find(h => h !== fijo));
-      }
-      E.prep = { cap: c.id, equipo, tercero: null, invertir: false };
+    if (!E.asignacion || E.asignacion.nodo !== E.nodo) {
+      const hs = heroesDe(c), k = E.historia.length;
+      const mapa = {};
+      hs.forEach((h, i) => { mapa[h] = (k + i) % 3; });
+      E.asignacion = { nodo: E.nodo, mapa };
     }
-    return E.prep;
+    return E.asignacion.mapa;
   }
-  function equipoActual() {
-    const p = prepActual();
-    return p.tercero ? [p.equipo[0], p.equipo[1], p.tercero] : [p.equipo[0], p.equipo[1]];
-  }
-  function quienJuega(i) {
-    const p = prepActual();
-    if (i === 2) return "Tercer héroe";
-    const j = p.invertir ? 1 - i : i;
-    return E.jugadores[j];
-  }
+  const equipoJugando = () => heroesDe(cap()).filter(h => asignacion()[h] !== -1);
 
   function pasosPreparacion(c, equipo) {
-    const v = VILLANOS[c.villano];
-    const n = equipo.length;
-    const L = i => LUGARES[c.anillo[i]].nombre;
+    const v = VILLANOS[c.villano], n = equipo.length, L = i => LUGARES[c.anillo[i]].nombre;
     const pasos = [];
     pasos.push({ t: `Tablero de ${v.nombre}`, d: `Colócalo arriba de la guía de Misiones con ${v.vida[n]} fichas de Vida (${n} héroes).` });
-    if (c.villano === "magneto") pasos.push({ t: "Misiones", d: "Coloca «Usar Cerebro» en lugar de «Rescatar Civiles», más «Derrotar Matones» y «Eliminar Amenazas»." });
-    else pasos.push({ t: "Misiones", d: "Coloca las 3 cartas de Misión en la guía." });
+    pasos.push({ t: "Misiones", d: c.villano === "magneto" ? "Coloca «Usar Cerebro» en lugar de «Rescatar Civiles», más «Derrotar Matones» y «Eliminar Amenazas»." : "Coloca las 3 cartas de Misión en la guía." });
     pasos.push({ t: "Lugares", d: `En sentido horario: ${c.anillo.map((x, i) => L(i)).join(" → ")}. Llena los espacios impresos en cada Lugar con sus Civiles y Matones.` });
-    if (c.villano === "green-goblin") pasos.push({ t: "Amenazas", d: "No coloques Amenazas ni fichas en los Lugares: deja el mazo de Amenazas boca abajo y las fichas aparte (preparación especial del Duende)." });
-    else pasos.push({ t: "Amenazas", d: "Baraja las 6 Amenazas y pon 1 boca arriba bajo cada Lugar, con su ficha de Amenaza al lado. Los Secuaces llevan sus fichas de Vida." });
+    pasos.push({ t: "Amenazas", d: c.villano === "green-goblin" ? "No coloques Amenazas ni fichas en los Lugares: deja su mazo boca abajo y las fichas aparte (preparación especial del Duende)." : "Baraja las 6 Amenazas y pon 1 boca arriba bajo cada Lugar, con su ficha de Amenaza al lado. Los Secuaces llevan sus fichas de Vida." });
     pasos.push({ t: "Villano", d: `${v.nombre} empieza en ${L(0)}. Baraja su Plan Maestro y déjalo junto a ese Lugar.` });
-    pasos.push({ t: "Héroes", d: `Todos empiezan en ${L(3)}, el Lugar opuesto al villano. Cada jugador baraja su mazo y roba 3 cartas.` });
+    const herido = equipo.filter(h => E.heridos.includes(h));
+    pasos.push({ t: "Héroes", d: `Todos empiezan en ${L(3)}, el Lugar opuesto al villano. Cada jugador baraja su mazo y roba 3 cartas${herido.length ? ` (${herido.map(h => HEROES[h].nombre).join(" y ")} roba${herido.length > 1 ? "n" : ""} 2: está${herido.length > 1 ? "n" : ""} herido${herido.length > 1 ? "s" : ""})` : ""}.` });
     if (c.villano === "mystique") pasos.push({ t: "Senador Kelly", d: `Coloca su ficha en ${L(3)}, con los Héroes.` });
-    if (c.villano === "sabretooth") pasos.push({ t: "Cazado", d: `${HEROES[c.primero || equipo[0]].nombre} empieza la partida y recibe la ficha de Cazado.` });
-    if (c.villano === "carnage") pasos.push({ t: "Medidor de engendros", d: `Coloca el indicador en la casilla ${clamp(E.carnage, 0, 3)}.` });
+    if (c.villano === "sabretooth") pasos.push({ t: "Cazado", d: `${HEROES[c.primero].nombre} empieza la partida y recibe la ficha de Cazado.` });
+    if (c.villano === "carnage") pasos.push({ t: "Medidor de engendros", d: `Coloca el indicador en la casilla ${E.flags.sonico === "usar" ? 0 : clamp(E.carnage, 0, 3)}.` });
     if (["rhino", "venom", "carnage"].includes(c.villano)) pasos.push({ t: "Fichas de Crisis", d: "Tenlas a mano (vienen en la caja X-Men)." });
-    if (c.identidad) pasos.push({ t: "Identidad Secreta", d: `Coloca 1 Periodista en ${L(0)}, ${L(2)} y ${L(4)}.` });
+    if (c.identidad) {
+      const exp = equipo.filter(h => (E.exposicion[h] || 0) > 0 && !E.publicos.includes(h));
+      pasos.push({ t: "Identidad Secreta", d: `Coloca 1 Periodista en ${L(0)}, ${L(2)} y ${L(4)}.${exp.length ? " Exposición que arrastran: " + exp.map(h => `${HEROES[h].nombre} ${E.exposicion[h]}`).join(", ") + "." : ""}` });
+    }
+    const ev = lineas(c.evento.efectos);
+    pasos.push({ t: `Carta de Evento: ${c.evento.titulo}`, d: ev, lista: true, carta: "evento" });
+    pasos.push({ t: `Pistas: ${c.pistas.titulo}`, d: `Coloca 1 ficha de Exposición boca abajo (el celular) en ${LUGARES[c.pistas.lugares[0]].nombre} y otra en ${LUGARES[c.pistas.lugares[1]].nombre}. Un héroe en un Lugar con Pista puede gastar 1 acción Heroica para recogerla.`, carta: "pistas" });
     const nv = nivelDe(c);
-    pasos.push({ t: `Dificultad: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
+    pasos.push({ t: `Desafío: ${NIVELES[nv].nombre}`, d: NIVELES[nv].regla });
 
-    const extra = [];
+    const fichas = [];
     equipo.forEach(h => {
-      if (c.identidad && (E.exposicion[h] || 0) > 0 && !E.publicos.includes(h)) extra.push(`${HEROES[h].nombre} empieza con ${E.exposicion[h]} ficha(s) de Exposición de capítulos anteriores.`);
-      if (E.heridos.includes(h)) extra.push(`${HEROES[h].nombre} está herido: roba 2 cartas en vez de 3.`);
+      const nh = nivelHeroe(h), m = HEROES[h].mejora;
+      if (nh >= 2) fichas.push(`${HEROES[h].nombre} (${m.nombre}): 1 ficha ${m.ficha}${nh >= 3 ? " y 1 Comodín" : ""}.`);
     });
-    const ep = estadoPanico(E.panico);
-    if (E.panico >= 2) extra.push(`Pánico (${ep.nombre}): ${ep.texto.replace("Al preparar, c", "C")}`);
-    E.pendientes.forEach(p => extra.push(`${p.de}: ${p.texto}`));
-    if (E.recompensa) { const r = RECOMPENSAS.find(x => x.id === E.recompensa); extra.push(`Recompensa «${r.nombre}»: ${r.texto.replace("del próximo capítulo ", "").replace(" el próximo capítulo", "")}`); }
-    if (c.final && E.panico <= 1) extra.push("La ciudad confía en ustedes: cada Héroe empieza con 1 ficha Comodín.");
-    if (c.final && E.panico >= 3) extra.push("Pánico alto: la dificultad del final sube un nivel (ya aplicado arriba).");
-    if (extra.length) pasos.push({ t: "Consecuencias de la campaña", d: extra, lista: true });
+    if (E.ayuda) fichas.push("La alianza se reagrupa tras la derrota: cada héroe, 1 ficha Comodín.");
+    if (dificultad().id === "facil") fichas.push("Dificultad Fácil: cada héroe, 1 ficha Comodín.");
+    E.pendientes.forEach(p => fichas.push(`${p.de}: ${p.texto}`));
+    if (c.final && E.panico <= 1) fichas.push("La ciudad confía en ustedes: cada héroe, 1 ficha Comodín.");
+    if (fichas.length) pasos.push({ t: "Fichas iniciales", d: fichas, lista: true });
 
-    pasos.push({ t: "¡A jugar!", d: c.villano === "sabretooth" ? "La partida empieza con el turno del villano; después juega Wolverine." : "La partida empieza con el turno del villano. Luego acuerden qué héroe juega primero." });
+    const ritmo = [];
+    if (E.frenado) ritmo.push("Recogieron todas las Pistas del capítulo anterior: el villano empieza Frenado (ficha verde sobre su mazo).");
+    if (dificultad().id === "facil") ritmo.push("Dificultad Fácil: el villano empieza Frenado.");
+    if (E.panico >= 2) ritmo.push(`Pánico (${estadoPanico(E.panico).nombre}): coloca 1 Matón extra en ${L(0)}.`);
+    if (E.panico >= 4) ritmo.push("Pánico (Caos): el villano empieza Acelerado (ficha naranja al final de la Trama). Si también está Frenado, se anulan.");
+    if (c.final && E.panico >= 3) ritmo.push("Pánico alto: el Desafío del final ya subió un nivel.");
+    if (ritmo.length) pasos.push({ t: "Estado de la ciudad", d: ritmo, lista: true });
+
+    pasos.push({ t: "¡A jugar!", d: c.primero ? `La partida empieza con el turno del villano. Después juega ${HEROES[c.primero].nombre}.` : "La partida empieza con el turno del villano. Después acuerden qué héroe juega primero." });
     return pasos;
   }
 
   /* ---------- Componentes ---------- */
-  function retrato(id, cls = "") {
-    const h = HEROES[id];
-    return `<img class="retrato ${cls}" src="assets/char/${id}.jpg" alt="${esc(h ? h.nombre : id)}" loading="lazy">`;
-  }
+  const retrato = (id, cls = "") => `<img class="retrato ${cls}" src="assets/char/${id}.jpg" alt="${esc(HEROES[id] ? HEROES[id].nombre : (VILLANOS[id] || {}).nombre || id)}" loading="lazy">`;
   function iconos(h) {
     const i = h.icons;
     return `<div class="iconos" aria-label="Iconos del mazo">
-      <span class="ic ic-m" title="Mover">${i.m}<small>MOV</small></span>
-      <span class="ic ic-a" title="Atacar">${i.a}<small>ATQ</small></span>
-      <span class="ic ic-h" title="Heroica">${i.h}<small>HER</small></span>
-      <span class="ic ic-c" title="Comodín">${i.c}<small>COM</small></span></div>`;
+      <span class="ic ic-m" title="Mover">${i.m}<small>MOV</small></span><span class="ic ic-a" title="Atacar">${i.a}<small>ATQ</small></span>
+      <span class="ic ic-h" title="Heroica">${i.h}<small>HER</small></span><span class="ic ic-c" title="Comodín">${i.c}<small>COM</small></span></div>`;
   }
-  function caption(texto, cls = "") { return `<p class="caption ${cls}">${texto}</p>`; }
+  const caption = (t, cls = "") => `<p class="caption ${cls}">${t}</p>`;
+  const estrellas = n => "★".repeat(n) + "☆".repeat(5 - n);
 
   function anillo(c) {
     const v = VILLANOS[c.villano];
     const nodos = c.anillo.map((id, i) => {
-      const ang = (-90 + i * 60) * Math.PI / 180;
-      const x = 50 + 37 * Math.cos(ang), y = 50 + 37 * Math.sin(ang);
-      const marcas = [];
-      if (i === 0) marcas.push(`<span class="marca marca-v">Villano</span>`);
-      if (i === 3) marcas.push(`<span class="marca marca-h">Héroes</span>`);
-      if (c.identidad && (i === 0 || i === 2 || i === 4)) marcas.push(`<span class="marca marca-p" title="Periodista">Prensa</span>`);
-      return `<div class="nodo" style="left:${x}%;top:${y}%">
-        <img src="assets/loc/${id}.jpg" alt="" loading="lazy"><span class="nodo-n">${esc(LUGARES[id].nombre)}</span>${marcas.join("")}</div>`;
+      const ang = (-90 + i * 60) * Math.PI / 180, x = 50 + 37 * Math.cos(ang), y = 50 + 37 * Math.sin(ang);
+      const m = [];
+      if (i === 0) m.push(`<span class="marca marca-v">Villano</span>`);
+      if (i === 3) m.push(`<span class="marca marca-h">Héroes</span>`);
+      if (c.pistas.lugares.includes(id)) m.push(`<span class="marca marca-p">Pista</span>`);
+      return `<div class="nodo" style="left:${x}%;top:${y}%"><img src="assets/loc/${id}.jpg" alt="" loading="lazy"><span class="nodo-n">${esc(LUGARES[id].nombre)}</span>${m.join("")}</div>`;
     }).join("");
-    return `<div class="anillo" role="img" aria-label="Disposición de los Lugares en sentido horario">
+    const leyenda = c.anillo.map((id, i) => `<li><b>${esc(LUGARES[id].nombre)}</b>${i === 0 ? ' <span class="chip-mini v">Villano</span>' : ""}${i === 3 ? ' <span class="chip-mini h">Héroes</span>' : ""}${c.pistas.lugares.includes(id) ? ' <span class="chip-mini p">Pista</span>' : ""}<span>${esc((c.notas || {})[id] || "")}</span></li>`).join("");
+    return `<div class="anillo" role="img" aria-label="Lugares en sentido horario">
       <div class="anillo-centro"><img src="assets/char/${c.villano}.jpg" alt="${esc(v.nombre)}"></div>
-      <svg class="anillo-flecha" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="2 2"/></svg>
-      ${nodos}</div>`;
+      <svg class="anillo-flecha" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="2 2"/></svg>${nodos}</div>
+      <ol class="leyenda">${leyenda}</ol>`;
+  }
+
+  function anteriormente() {
+    const prev = E.historia[E.historia.length - 1];
+    if (!prev) return "";
+    let t = `<b>Anteriormente…</b> ${esc(prev.resumen)}`;
+    if (prev.decision) t += ` Decidieron: ${esc(prev.decision)}.`;
+    return `<div class="anteriormente">${caption(t)}</div>`;
+  }
+
+  function portada(c) {
+    const v = VILLANOS[c.villano], acto = ACTOS[c.acto];
+    return `<section class="portada" style="background-image:url('assets/villain/${c.villano}-art.jpg')">
+      <div class="portada-num" aria-hidden="true">#${E.historia.filter(h => h.nodo !== "F").length + 1 > 10 ? 10 : E.historia.filter(h => h.nodo !== "F").length + 1}</div>
+      <div class="portada-txt"><span class="acto">${acto.nombre} · ${acto.titulo}</span><h2>${esc(c.titulo)}</h2>
+      <span class="contra">contra <b>${esc(v.nombre)}</b> · ${estrellas(v.dificultad)}</span></div></section>`;
   }
 
   /* ---------- Vista: Historia ---------- */
   function vistaHistoria() {
     if (E.fase === "fin") return vistaFin();
     if (E.fase === "resultado") return vistaResultado();
-    const c = cap(), v = VILLANOS[c.villano], acto = ACTOS[c.acto];
-    const prev = E.historia[E.historia.length - 1];
-    const p = prepActual(), equipo = equipoActual();
-    const fijo = heroeFijo(c);
-
-    const anterior = prev ? `<div class="anteriormente">${caption(`<b>Anteriormente…</b> ${esc(prev.resumen)}`)}</div>` : "";
-    const opciones = E.disponibles.filter(h => h !== fijo && h !== (c.fijo2 || ""));
-    const recomendados = c.recomendados.filter(h => E.disponibles.includes(h));
-
-    const tarjetaHeroe = (id, i, fijoBool) => {
-      const h = HEROES[id];
-      return `<article class="heroe-sel ${fijoBool ? "es-fijo" : ""}">
-        ${retrato(id)}
-        <div class="heroe-sel-txt">
-          <span class="etq">${fijoBool ? "Héroe de la historia" : i === 2 ? "Tercer héroe (opcional)" : "Compañero"}</span>
-          <h4>${esc(h.nombre)}</h4>
-          <span class="jugador">${esc(quienJuega(i))}</span>
-          ${iconos(h)}
-          ${E.heridos.includes(id) ? `<span class="chip chip-mal">Herido</span>` : ""}
-        </div></article>`;
+    if (E.fase === "decision") return vistaDecision();
+    if (E.fase === "juego") return `<section class="vacio"><p class="sfx sfx-chico">¡En juego!</p><p>La partida contra ${esc(VILLANOS[cap().villano].nombre)} está en curso. Cuando termine, anota el resultado en <b>Partida</b>.</p><button class="btn" data-ir="partida">Ir a Partida</button></section>`;
+    const c = cap(), mapa = asignacion(), hs = heroesDe(c), equipo = equipoJugando();
+    const tarjeta = h => {
+      const H = HEROES[h], nh = nivelHeroe(h);
+      return `<article class="heroe-sel ${mapa[h] === -1 ? "fuera" : ""}">${retrato(h)}
+        <div class="heroe-sel-txt"><span class="etq">${esc(H.rol)}${nh > 1 ? ` · Nivel ${nh}` : ""}</span><h4>${esc(H.nombre)}</h4>${iconos(H)}
+        ${E.heridos.includes(h) ? `<span class="chip chip-mal">Herido</span>` : ""}
+        <div class="asignar" role="radiogroup" aria-label="Quién juega con ${esc(H.nombre)}">
+          ${E.jugadores.map((j, i) => `<button class="chip ${mapa[h] === i ? "on" : ""}" data-asignar="${h}" data-j="${i}" aria-pressed="${mapa[h] === i}">${esc(j)}</button>`).join("")}
+          <button class="chip ${mapa[h] === -1 ? "on" : ""}" data-asignar="${h}" data-j="-1" aria-pressed="${mapa[h] === -1}">No juega</button>
+        </div></div></article>`;
     };
-
-    const selector = (slot) => {
-      const actual = slot === 1 ? p.equipo[1] : p.tercero;
-      return `<div class="selector" role="radiogroup" aria-label="${slot === 1 ? "Elige compañero" : "Elige tercer héroe"}">
-        ${slot === 2 ? `<button class="chip ${!p.tercero ? "on" : ""}" data-sel="2" data-id="">Sin tercer héroe</button>` : ""}
-        ${opciones.filter(h => slot === 1 ? h !== p.tercero : h !== p.equipo[1]).map(h => `
-          <button class="chip ${actual === h ? "on" : ""}" data-sel="${slot}" data-id="${h}" aria-pressed="${actual === h}">
-            ${recomendados.includes(h) ? "★ " : ""}${esc(HEROES[h].nombre)}</button>`).join("")}
-      </div>`;
-    };
-
     const pasos = pasosPreparacion(c, equipo);
-    return `
-    <section class="portada" style="background-image:url('assets/villain/${c.villano}-art.jpg')">
-      <div class="portada-num" aria-hidden="true">#${c.id}</div>
-      <div class="portada-txt">
-        <span class="acto">${acto.nombre} · ${acto.titulo}</span>
-        <h2>${esc(c.titulo)}</h2>
-        <span class="contra">contra <b>${esc(v.nombre)}</b> · ${"★".repeat(v.dificultad)}${"☆".repeat(5 - v.dificultad)}</span>
-      </div>
-    </section>
-    ${anterior}
-    <section class="bloque">
-      <h3 class="titulo-sec">La historia</h3>
-      <div class="captions">${c.prologo.map(t => caption(esc(t))).join("")}</div>
-    </section>
-    <section class="bloque">
-      <h3 class="titulo-sec">El equipo</h3>
-      <p class="nota">${esc(c.porQue)}</p>
-      <div class="equipo">
-        ${tarjetaHeroe(p.equipo[0], 0, true)}
-        ${tarjetaHeroe(p.equipo[1], 1, !!c.fijo2)}
-        ${p.tercero ? tarjetaHeroe(p.tercero, 2, false) : ""}
-      </div>
-      ${c.fijo2 ? "" : `<h4 class="sub">Compañero ${recomendados.length ? "<small>★ recomendados para este villano</small>" : ""}</h4>${selector(1)}`}
-      <h4 class="sub">Tercer héroe ${c.tercero ? "<small>recomendado en el final</small>" : "<small>sube la vida del villano</small>"}</h4>
-      ${selector(2)}
-      <button class="btn-sec" id="btnInvertir">Intercambiar quién juega cada héroe</button>
-    </section>
-    <section class="bloque">
-      <h3 class="titulo-sec">Preparación de la mesa</h3>
-      ${anillo(c)}
-      <ol class="pasos">${pasos.map(s => `<li><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<span>${esc(s.d)}</span>`}</li>`).join("")}</ol>
-    </section>
-    <div class="cta"><button class="btn" id="btnEmpezar">Empezar la partida</button></div>`;
+    return `${portada(c)}${anteriormente()}
+    <section class="bloque"><h3 class="titulo-sec">La historia</h3>
+      <div class="captions">${lineas(c.prologo).map(t => caption(esc(t))).join("")}</div>
+      <p class="inspiracion"><b>Inspiración:</b> ${esc(c.inspiracion)}</p></section>
+    <section class="bloque"><h3 class="titulo-sec">El equipo</h3>
+      <p class="nota">Los tres héroes de este capítulo los elige la historia. Ustedes deciden quién juega con cada uno. Si hoy juegan solo dos, marquen «No juega» en uno.</p>
+      <div class="equipo">${hs.map(tarjeta).join("")}</div></section>
+    <section class="bloque"><h3 class="titulo-sec">Cartas del capítulo</h3>
+      <div class="cartas">
+        <article class="carta carta-evento"><span class="carta-tipo">Carta de Evento</span><h4>${esc(c.evento.titulo)}</h4><p>${esc(c.evento.texto)}</p><ul>${lineas(c.evento.efectos).map(x => `<li>${esc(x)}</li>`).join("")}</ul></article>
+        <article class="carta carta-pistas"><span class="carta-tipo">Pistas</span><h4>${esc(c.pistas.titulo)}</h4><p>${esc(c.pistas.texto)}</p>
+          <p class="carta-regla">En ${esc(LUGARES[c.pistas.lugares[0]].nombre)} y ${esc(LUGARES[c.pistas.lugares[1]].nombre)}. Gasta 1 acción Heroica en ese Lugar para recoger cada una. Si recogen las dos, el próximo villano empieza Frenado.</p></article>
+      </div></section>
+    <section class="bloque"><h3 class="titulo-sec">Preparación de la mesa</h3>${anillo(c)}
+      <ol class="pasos">${pasos.map(s => `<li class="${s.carta ? "paso-" + s.carta : ""}"><b>${esc(s.t)}</b>${s.lista ? `<ul>${s.d.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<span>${esc(s.d)}</span>`}</li>`).join("")}</ol></section>
+    <div class="cta"><button class="btn" id="btnEmpezar">Mesa lista: empezar la partida</button></div>`;
   }
 
-  /* ---------- Vista: Mesa ---------- */
-  function vistaMesa() {
+  /* ---------- Vista: Partida ---------- */
+  function vistaPartida() {
     const P = E.partida;
-    if (!P) return `<section class="vacio">
-      <p class="sfx sfx-chico">¿Listos?</p>
-      <p>Prepara el capítulo ${E.cap} en <b>Historia</b> y toca «Empezar la partida». Aquí vas a llevar la vida del villano, las Misiones y los eventos.</p>
+    if (!P) return `<section class="vacio"><p class="sfx sfx-chico">¿Listos?</p>
+      <p>Prepara el capítulo en <b>Historia</b> y toca «Mesa lista». Aquí vas a anotar el resultado cuando termine la partida.</p>
       <button class="btn" data-ir="historia">Ir a Historia</button></section>`;
-    const c = cap(), v = VILLANOS[c.villano];
-    const misiones = c.villano === "magneto" ? ["Usar Cerebro", MISIONES[1], MISIONES[2]] : MISIONES;
-    const hechas = P.misiones.filter(Boolean).length;
-    const vulnerable = hechas >= 2;
-    const umbralVenom = P.equipo.length === 2 ? 8 : 6;
-
+    const c = cap(P.nodo), v = VILLANOS[c.villano];
+    const recordatorio = [
+      `${v.nombre} tiene ${v.vida[P.equipo.length]} de vida. No se le puede dañar hasta completar 2 Misiones.`,
+      "Con la 1ª Misión el villano queda Bajo Presión: juega Plan Maestro cada 2 cartas de héroe en vez de 3.",
+      "Con la 3ª Misión, cada héroe roba 1 carta.",
+      `Pistas en ${LUGARES[c.pistas.lugares[0]].nombre} y ${LUGARES[c.pistas.lugares[1]].nombre}: 1 acción Heroica para recoger cada una.`
+    ];
     return `
-    <section class="mesa-villano">
-      <img src="assets/char/${c.villano}.jpg" alt="">
-      <div class="mv-txt">
-        <span class="etq">Capítulo ${c.id} · ${esc(c.titulo)}</span>
-        <h2>${esc(v.nombre)}</h2>
-        <span class="estado-v ${vulnerable ? "ok" : ""}">${vulnerable ? "Ya pueden dañarlo" : `Invulnerable hasta completar 2 Misiones (${hechas}/2)`}</span>
-      </div>
-      <div class="vida" aria-live="polite">
-        <button class="redondo" data-vida="1" aria-label="Sumar vida">+</button>
-        <div class="vida-num"><b>${P.vida}</b><small>/ ${P.vidaMax}</small></div>
-        <button class="redondo rojo" data-vida="-1" aria-label="Quitar vida" ${vulnerable ? "" : "disabled"}>−</button>
-      </div>
-    </section>
-
-    <section class="bloque">
-      <h3 class="titulo-sec">Misiones</h3>
-      <div class="misiones">${misiones.map((m, i) => `
-        <button class="mision ${P.misiones[i] ? "hecha" : ""}" data-mision="${i}" aria-pressed="${P.misiones[i]}">
-          <span class="check" aria-hidden="true">${P.misiones[i] ? "✔" : ""}</span>${esc(m)}</button>`).join("")}</div>
-      <p class="nota">Al completar la 1ª Misión el villano queda <b>Bajo Presión</b>: juega Plan Maestro cada 2 cartas de héroe en vez de 3. Con la 2ª ya pueden dañarlo. Con la 3ª, cada héroe roba 1 carta.</p>
-    </section>
-
-    <section class="bloque">
-      <h3 class="titulo-sec">Viñetas</h3>
-      <div class="vinetas">
-        ${["inicio", "presion", "segunda"].map(k => {
-          const b = c.viñetas[k]; const abierta = k === "inicio" || (k === "presion" && hechas >= 1) || (k === "segunda" && hechas >= 2);
-          return `<button class="vineta ${abierta ? "" : "cerrada"}" data-vineta="${k}" ${abierta ? "" : "disabled"}>
-            <span class="vineta-k">${k === "inicio" ? "Inicio" : k === "presion" ? "1ª Misión" : "2ª Misión"}</span>
-            <span>${abierta ? esc(b.titulo) : "Se revela al avanzar"}</span></button>`;
-        }).join("")}
-      </div>
-    </section>
-
-    ${c.villano === "carnage" ? `<section class="bloque">
-      <h3 class="titulo-sec">Medidor de engendros</h3>
-      <div class="medidor">${Array.from({ length: 11 }, (_, i) => `<button class="celda ${i <= P.medidor ? "llena" : ""} ${i === 10 ? "fatal" : ""}" data-medidor="${i}" aria-label="Medidor en ${i}">${i}</button>`).join("")}</div>
-    </section>` : ""}
-
-    <section class="bloque">
-      <h3 class="titulo-sec">Héroes</h3>
-      <div class="mesa-heroes">${P.equipo.map(h => `
-        <article class="mh">
-          ${retrato(h)}
-          <div class="mh-txt"><h4>${esc(HEROES[h].nombre)}</h4>
-          ${c.identidad && !E.publicos.includes(h) ? contador("exp", h, P.exp[h] || 0, "Exposición", 3) : ""}
-          ${c.villano === "venom" ? contador("crisis", h, P.crisis[h] || 0, `Crisis (fuera a las ${umbralVenom})`, umbralVenom) : ""}
-          <label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> Quedó fuera de combate</label>
-          </div></article>`).join("")}</div>
-    </section>
-
-    <section class="bloque resolver">
-      <h3 class="titulo-sec">¿Cómo terminó?</h3>
-      ${P.confirmar ? `<div class="confirma">
-          <p>${P.confirmar === "gano" ? "¿Confirmas que derrotaron a " + esc(v.nombre) + "?" : "¿Confirmas que el villano completó su plan?"}</p>
-          <div class="fila"><button class="btn" id="btnConfirmar">Sí, ${P.confirmar === "gano" ? "ganamos" : "perdimos"}</button><button class="btn-sec" id="btnCancelar">Volver</button></div></div>`
-        : `<div class="fila"><button class="btn verde" data-fin="gano">Ganamos</button><button class="btn rojo" data-fin="perdio">Perdimos</button></div>`}
-    </section>`;
-  }
-  function contador(tipo, h, val, nombre, max) {
-    return `<div class="cont"><span>${nombre}</span>
-      <button class="mini" data-cont="${tipo}" data-h="${h}" data-d="-1" aria-label="Restar">−</button>
-      <b class="${val >= max ? "alerta" : ""}">${val}</b>
-      <button class="mini" data-cont="${tipo}" data-h="${h}" data-d="1" aria-label="Sumar">+</button></div>`;
+    <section class="mesa-villano"><img src="assets/char/${c.villano}.jpg" alt="">
+      <div class="mv-txt"><span class="etq">${esc(c.titulo)}</span><h2>${esc(v.nombre)}</h2><span class="estado-v">${v.complot === "No tiene." ? "Sin complot maligno: pierden si se acaba su Plan Maestro o un héroe se queda sin cartas." : "Complot: " + esc(v.complot)}</span></div></section>
+    <section class="bloque"><h3 class="titulo-sec">Recordatorio</h3><ul class="avisos">${recordatorio.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>
+    <section class="bloque"><h3 class="titulo-sec">Al terminar</h3>
+      <p class="nota">Completen esto cuando la partida termine.</p>
+      <div class="mesa-heroes">${P.equipo.map(h => `<article class="mh">${retrato(h)}<div class="mh-txt"><h4>${esc(HEROES[h].nombre)}</h4>
+        ${c.identidad && !E.publicos.includes(h) ? `<div class="cont"><span>Exposición al final</span><button class="mini" data-exp="${h}" data-d="-1" aria-label="Restar">−</button><b class="${(P.exp[h] || 0) >= 3 ? "alerta" : ""}">${P.exp[h] || 0}</b><button class="mini" data-exp="${h}" data-d="1" aria-label="Sumar">+</button></div>` : ""}
+        <label class="ko"><input type="checkbox" id="ko-${h}" data-ko="${h}" ${P.ko[h] ? "checked" : ""}> Quedó fuera de combate</label></div></article>`).join("")}</div>
+      <h4 class="sub">Pistas</h4>
+      <div class="selector">
+        <button class="chip ${P.pistas === 2 ? "on" : ""}" data-pistas="2">Recogimos las dos</button>
+        <button class="chip ${P.pistas === 1 ? "on" : ""}" data-pistas="1">Solo una</button>
+        <button class="chip ${P.pistas === 0 ? "on" : ""}" data-pistas="0">Ninguna</button>
+      </div></section>
+    <section class="bloque resolver"><h3 class="titulo-sec">¿Cómo terminó?</h3>
+      ${P.confirmar ? `<div class="confirma"><p>${P.confirmar === "gano" ? `¿Confirman que derrotaron a ${esc(v.nombre)}?` : "¿Confirman que el villano completó su plan?"}</p>
+        <div class="fila"><button class="btn" id="btnConfirmar">Sí, ${P.confirmar === "gano" ? "ganamos" : "perdimos"}</button><button class="btn-sec" id="btnCancelar">Volver</button></div></div>`
+      : `<div class="fila"><button class="btn verde" data-fin="gano">Ganamos</button><button class="btn rojo" data-fin="perdio">Perdimos</button></div>`}
+      <button class="btn-sec" id="btnAbandonar">Volver a preparar la mesa</button></section>`;
   }
 
-  /* ---------- Resultado ---------- */
+  /* ---------- Resultado, decisión y final ---------- */
   function vistaResultado() {
-    const R = E.resultado, c = CAPITULOS.find(x => x.id === R.cap), out = R.gano ? c.victoria : c.derrota;
-    const avisos = R.avisos || [];
-    const decision = c.decision;
-    const puedeSeguir = (!decision || R.decision) && (!R.gano || c.final || R.recompensa);
-    return `
-    <section class="resultado ${R.gano ? "gano" : "perdio"}">
-      <p class="sfx">${R.gano ? "¡Victoria!" : "Derrota"}</p>
-      <h2>${esc(out.titulo)}</h2>
-    </section>
+    const R = E.resultado, c = cap(R.nodo), out = R.gano ? c.victoria : c.derrota;
+    return `<section class="resultado ${R.gano ? "gano" : "perdio"}"><p class="sfx">${R.gano ? "¡Victoria!" : c.final ? "¡Otra vez!" : "Derrota"}</p><h2>${esc(out.titulo)}</h2></section>
     <section class="bloque"><div class="captions">${out.texto.map(t => caption(esc(t))).join("")}</div></section>
-    ${avisos.length ? `<section class="bloque"><h3 class="titulo-sec">Lo que cambia</h3><ul class="avisos">${avisos.map(a => `<li>${esc(a)}</li>`).join("")}</ul></section>` : ""}
-    ${R.gano && !c.final ? `<section class="bloque"><h3 class="titulo-sec">Elijan su recompensa</h3>
-      <div class="opciones">${RECOMPENSAS.map(r => `<button class="opcion ${R.recompensa === r.id ? "on" : ""}" data-recompensa="${r.id}" aria-pressed="${R.recompensa === r.id}"><b>${esc(r.nombre)}</b><span>${esc(r.texto)}</span></button>`).join("")}</div></section>` : ""}
-    ${decision ? `<section class="bloque decision"><h3 class="titulo-sec">${esc(decision.titulo)}</h3>
-      ${caption(esc(decision.texto))}
-      <div class="opciones">${decision.opciones.map(o => `<button class="opcion ${R.decision === o.id ? "on" : ""}" data-decision="${o.id}" ${R.decision && R.decision !== o.id ? "disabled" : ""}><b>${esc(o.nombre)}</b><span>${esc(o.texto)}</span></button>`).join("")}</div>
-      ${R.decision ? "" : `<p class="nota">La decisión es definitiva: piénsenla juntos.</p>`}</section>` : ""}
-    <div class="cta"><button class="btn" id="btnSeguir" ${puedeSeguir ? "" : "disabled"}>${c.final ? "Ver el final" : `Continuar al capítulo ${c.id + 1}`}</button></div>`;
+    ${R.avisos.length ? `<section class="bloque"><h3 class="titulo-sec">Lo que cambia</h3><ul class="avisos">${R.avisos.map(a => `<li>${esc(a)}</li>`).join("")}</ul></section>` : ""}
+    <div class="cta"><button class="btn" id="btnSeguir">${R.gano && c.final ? "Ver el final" : c.final ? "Volver a intentarlo" : "Continuar la historia"}</button></div>`;
+  }
+
+  function vistaDecision() {
+    const d = DECISIONES[E.decision.id], ult = E.historia[E.historia.length - 1];
+    const nota = ult && d.notas ? d.notas[`${ult.nodo}:${ult.gano ? "gano" : "perdio"}`] : null;
+    return `<section class="resultado decision-top"><p class="sfx sfx-chico">Decisión</p><h2>${esc(d.titulo)}</h2></section>
+    <section class="bloque">${nota ? caption(esc(nota)) : ""}${caption(esc(d.texto))}
+      <div class="opciones">${d.opciones.map(o => `<button class="opcion ${E.decision.elegida === o.id ? "on" : ""}" data-decision="${o.id}" aria-pressed="${E.decision.elegida === o.id}"><b>${esc(o.nombre)}</b><span>${esc(o.texto)}</span></button>`).join("")}</div>
+      <p class="nota">La decisión es definitiva: piénsenla juntos.</p></section>
+    <div class="cta"><button class="btn" id="btnDecidir" ${E.decision.elegida ? "" : "disabled"}>Confirmar la decisión</button></div>`;
   }
 
   function vistaFin() {
-    const ult = E.historia[E.historia.length - 1];
-    const gano = ult && ult.gano;
-    const c = CAPITULOS[CAPITULOS.length - 1];
-    const lineas = lineasFinales(E, gano);
-    const victorias = E.historia.filter(h => h.gano).length;
-    return `
-    <section class="resultado ${gano ? "gano" : "perdio"}">
-      <p class="sfx">${gano ? "Fin" : "Continuará…"}</p>
-      <h2>Telaraña Mutante</h2>
-    </section>
-    <section class="bloque"><div class="captions">${(gano ? c.victoria : c.derrota).texto.concat(lineas).map(t => caption(esc(t))).join("")}</div></section>
+    const ep = epilogoFinal(E), c = cap("F");
+    const victorias = E.historia.filter(h => h.gano).length, derrotas = E.historia.filter(h => !h.gano).length;
+    const extra = E.flags.pistasFinal ? ["Ningún alumno se quedó atrás: los rescataron a todos."] : [];
+    return `<section class="resultado gano"><p class="sfx">Fin</p><h2>${esc(ep.titulo)}</h2></section>
+    <section class="bloque"><div class="captions">${c.victoria.texto.concat(extra, ep.lineas).map(t => caption(esc(t))).join("")}</div></section>
     <section class="bloque"><h3 class="titulo-sec">La campaña en números</h3>
-      <div class="numeros"><div><b>${victorias}</b><span>victorias</span></div><div><b>${E.historia.length - victorias}</b><span>derrotas</span></div><div><b>${E.panico}</b><span>pánico final</span></div></div>
-    </section>
-    <div class="cta"><button class="btn-sec" data-ir="campana">Ver la bitácora</button></div>`;
+      <div class="numeros"><div><b>${victorias}</b><span>victorias</span></div><div><b>${derrotas}</b><span>derrotas</span></div><div><b>${E.panico}</b><span>pánico final</span></div></div></section>
+    <div class="cta"><button class="btn-sec" data-ir="mapa">Ver el mapa de la campaña</button></div>`;
+  }
+
+  /* ---------- Vista: Mapa ---------- */
+  function vistaMapa() {
+    const filas = [1, 2, 3, 4].map(a => {
+      const jugados = E.historia.map((h, i) => ({ h, i })).filter(x => CAPITULOS[x.h.nodo].acto === a);
+      const actual = (E.fase === "prep" || E.fase === "juego") && cap().acto === a;
+      const alcanzado = jugados.length || actual;
+      const tarjetas = jugados.map(({ h }) => {
+        const c = CAPITULOS[h.nodo];
+        return `<li class="hito ${h.gano ? "gano" : "perdio"}"><div class="hito-arte"><img src="assets/char/${c.villano}.jpg" alt="${esc(VILLANOS[c.villano].nombre)}"><span class="sello">${h.gano ? "Victoria" : "Derrota"}</span></div>
+          <div class="hito-txt"><b>${esc(c.titulo)}</b><span>contra ${esc(VILLANOS[c.villano].nombre)}</span>
+          <div class="mini-equipo">${h.equipo.map(x => `<img src="assets/char/${x}.jpg" alt="${esc(HEROES[x].nombre)}" title="${esc(HEROES[x].nombre)}">`).join("")}</div>
+          ${h.decision ? `<span class="decidido">Decidieron: ${esc(h.decision)}</span>` : ""}</div></li>`;
+      }).join("");
+      const enCurso = actual ? `<li class="hito actual"><div class="hito-arte"><img src="assets/char/${cap().villano}.jpg" alt=""><span class="sello">${E.fase === "juego" ? "Jugando" : "Ahora"}</span></div>
+        <div class="hito-txt"><b>${esc(cap().titulo)}</b><span>contra ${esc(VILLANOS[cap().villano].nombre)}</span></div></li>` : "";
+      const futuro = (!alcanzado || (actual && cap().paso < (a === 4 ? 1 : 3))) && E.fase !== "fin" ? `<li class="hito misterio"><div class="hito-arte"><span>?</span></div><div class="hito-txt"><b>Por descubrir</b><span>Se revela al jugar</span></div></li>` : "";
+      return `<section class="acto-mapa ${alcanzado ? "" : "bloqueado"}"><h3 class="titulo-sec">${ACTOS[a].nombre} · ${alcanzado ? ACTOS[a].titulo : "???"}</h3><ol class="hitos">${tarjetas}${enCurso}${futuro}</ol></section>`;
+    }).join("");
+    return `<p class="nota">El camino que recorrieron. Lo que todavía no jugaron queda oculto.</p>${filas}`;
   }
 
   /* ---------- Vista: Archivo ---------- */
-  let pestanaArchivo = "heroes";
+  let pestana = "heroes";
   function vistaArchivo() {
     const tabs = [["heroes", "Héroes"], ["villanos", "Villanos"], ["lugares", "Lugares"], ["reglas", "Reglas"]];
+    const conocidos = new Set(E.historia.flatMap(h => h.equipo).concat(E.fase !== "fin" && cap() ? heroesDe(cap()) : []));
     let cuerpo = "";
-    if (pestanaArchivo === "heroes") cuerpo = `<div class="grilla-h">${Object.keys(HEROES).map(id => {
-      const h = HEROES[id], ok = E.disponibles.includes(id);
+    if (pestana === "heroes") cuerpo = `<div class="grilla-h">${Object.keys(HEROES).map(id => {
+      const h = HEROES[id], ok = conocidos.has(id), nh = nivelHeroe(id);
       return `<article class="ficha ${ok ? "" : "bloqueada"}">${retrato(id)}<div class="ficha-txt">
-        <span class="etq">${h.caja}${h.antiheroe ? " · Antihéroe" : ""}${ok ? "" : " · Aún no aparece"}</span>
+        <span class="etq">${h.caja}${h.antiheroe ? " · Antihéroe" : ""} · ${ok ? `Nivel ${nh} (${E.xp[id] || 0} partidas)` : "Aún no aparece"}</span>
         <h4>${esc(h.nombre)} <small>${esc(h.alias)}</small></h4><p class="rol">${esc(h.rol)}</p>${iconos(h)}
         <ul class="esp">${h.especiales.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
-        <p><b>Fuerte:</b> ${esc(h.fuerte)}</p><p><b>Débil:</b> ${esc(h.debil)}</p><p><b>Brilla contra:</b> ${esc(h.contra)}</p></div></article>`;
+        <p><b>Fuerte:</b> ${esc(h.fuerte)}</p><p><b>Débil:</b> ${esc(h.debil)}</p><p><b>Brilla contra:</b> ${esc(h.contra)}</p>
+        <p class="mejora"><b>Mejora «${esc(h.mejora.nombre)}»:</b> desde su segunda partida empieza con 1 ficha ${esc(h.mejora.ficha)}; desde la cuarta, también con 1 Comodín.</p></div></article>`;
     }).join("")}</div>`;
-    if (pestanaArchivo === "villanos") cuerpo = `<div class="grilla-v">${Object.keys(VILLANOS).map(id => {
+    if (pestana === "villanos") cuerpo = `<div class="grilla-v">${Object.keys(VILLANOS).map(id => {
       const v = VILLANOS[id];
       return `<article class="villano-f"><img class="tablero" src="assets/villain/${id}-board.jpg" alt="Tablero de ${esc(v.nombre)}" loading="lazy">
-        <div class="ficha-txt"><span class="etq">Dificultad ${"★".repeat(v.dificultad)}${"☆".repeat(5 - v.dificultad)} · Vida 2/3/4 héroes: ${v.vida[2]}/${v.vida[3]}/${v.vida[4]}</span>
+        <div class="ficha-txt"><span class="etq">Dificultad ${estrellas(v.dificultad)} · Vida con 2/3/4 héroes: ${v.vida[2]}/${v.vida[3]}/${v.vida[4]}</span>
         <h4>${esc(v.nombre)} <small>${esc(v.alias)}</small></h4>
         <p><b>Reglas especiales:</b> ${esc(v.especial)}</p><p><b>BAM:</b> ${esc(v.bam)}</p><p><b>Exceso:</b> ${esc(v.exceso)}</p><p><b>Complot:</b> ${esc(v.complot)}</p>
-        ${v.prep.map(x => `<p><b>Preparación:</b> ${esc(x.replace(/^Preparación especial[^:]*: /, ""))}</p>`).join("")}
-        ${caption(esc(v.consejo), "caption-tip")}</div></article>`;
+        ${v.prep.map(x => `<p><b>Preparación:</b> ${esc(x)}</p>`).join("")}${caption(esc(v.consejo), "caption-tip")}</div></article>`;
     }).join("")}</div>`;
-    if (pestanaArchivo === "lugares") cuerpo = `<p class="nota">Los 14 Lugares que tienes: 6 de Enter the Spider-Verse y 8 de la caja X-Men.</p>
-      <div class="grilla-l">${Object.keys(LUGARES).map(id => {
-        const l = LUGARES[id];
-        return `<article class="lugar"><img src="assets/loc/${id}.jpg" alt="Carta de ${esc(l.nombre)}" loading="lazy"><div><span class="etq">${l.caja}</span><h4>${esc(l.nombre)}</h4><p>${esc(l.efecto)}</p></div></article>`;
-      }).join("")}</div>`;
-    if (pestanaArchivo === "reglas") cuerpo = `<div class="reglas">
+    if (pestana === "lugares") cuerpo = `<p class="nota">Los 14 Lugares que tienes: 6 de Enter the Spider-Verse y 8 de la caja X-Men.</p>
+      <div class="grilla-l">${Object.keys(LUGARES).map(id => `<article class="lugar"><img src="assets/loc/${id}.jpg" alt="Carta de ${esc(LUGARES[id].nombre)}" loading="lazy"><div><span class="etq">${LUGARES[id].caja}</span><h4>${esc(LUGARES[id].nombre)}</h4><p>${esc(LUGARES[id].efecto)}</p></div></article>`).join("")}</div>`;
+    if (pestana === "reglas") cuerpo = `<div class="reglas">
+      <h4>Cómo se juega la campaña</h4><p>Usen el celular dos veces por capítulo: al preparar la mesa y al terminar. Todo lo que pasa en la partida ya está en la preparación: la Carta de Evento cambia el armado y las Pistas son celulares boca abajo sobre la mesa.</p>
+      <h4>Pistas</h4><p>Cada capítulo pone 2 fichas de Exposición boca abajo en dos Lugares. Un héroe en ese Lugar puede gastar 1 acción Heroica para recogerla. Si recogen las dos, el villano del próximo capítulo empieza Frenado. Ojo: esas acciones Heroicas no van a las Misiones.</p>
+      <h4>La historia se ramifica</h4><p>Ganar o perder lleva a capítulos distintos, con otros villanos y otros lugares. Cada acto tiene un capítulo para cada combinación de resultados. El final hay que ganarlo: si pierden, lo vuelven a jugar con ayuda.</p>
+      <h4>Decisiones</h4><p>Cuatro veces en la campaña tendrán que elegir. Las decisiones cambian aliados, cómo empieza el Acto III y cómo termina todo.</p>
+      <h4>Mejoras de los héroes</h4><p>Cada héroe gana experiencia al jugar. Desde su segunda partida empieza con 1 ficha de acción propia; desde la cuarta, también con 1 Comodín.</p>
+      <h4>Herido y ayuda</h4><p>Si pierden, cada héroe que quedó fuera de combate roba solo 2 cartas la próxima vez que juegue. Pero la alianza se reagrupa: en el capítulo siguiente cada héroe empieza con 1 Comodín.</p>
+      <h4>Pánico en Nueva York</h4><p>Sube con las derrotas y con algunas decisiones. Con 2-3 se añade 1 Matón al preparar; con 4-5 además el villano empieza Acelerado. Afecta a la dificultad y al epílogo del final.</p>
       <h4>Turno del villano</h4><p>Roba una carta de Plan Maestro y resuélvela de arriba abajo: mueve al villano en sentido horario, activa ¡BAM! (tablero y Amenazas), añade Matones y Civiles alrededor y aplica el efecto especial. Si no caben fichas, se activa su Exceso.</p>
-      <h4>Turno del héroe</h4><p>Roba 1 carta, juega 1 carta en la Trama y usa sus iconos más los iconos de la carta de héroe anterior (no su texto especial). Al final, si tu Lugar no tiene Amenaza, puedes usar su efecto de Fin del Turno.</p>
-      <h4>Ritmo</h4><p>El villano juega después de cada 3 cartas de héroe. Con la 1ª Misión completa queda <b>Bajo Presión</b> y juega cada 2 cartas.</p>
+      <h4>Turno del héroe</h4><p>Roba 1 carta, juega 1 carta en la Trama y usa sus iconos más los de la carta de héroe anterior (no su texto especial). Al final, si tu Lugar no tiene Amenaza, puedes usar su efecto de Fin del Turno.</p>
       <h4>Dañar al villano</h4><p>Solo después de completar 2 Misiones. Ningún efecto de esta campaña se salta esa regla.</p>
-      <h4>Daño a los héroes</h4><p>Por cada daño, descarta 1 carta de tu mano al fondo de tu mazo. Sin cartas en la mano quedas fuera de combate: se activa el ¡BAM! del villano y en tu siguiente turno robas hasta 4.</p>
-      <h4>Derrota</h4><p>Pierden si el villano cumple su Complot, si tiene que robar Plan Maestro y su mazo está vacío, o si un héroe empieza su turno sin cartas en mano ni mazo.</p>
       <h4>Frenado y Acelerado</h4><p>Frenado: el villano juega su siguiente carta 1 turno más tarde (ficha verde sobre su mazo). Acelerado: 1 turno antes (ficha naranja al final de la Trama). Si tiene las dos, se anulan.</p>
-      <h4>Identidad Secreta</h4><p>Un héroe en un Lugar con Periodista que hace cualquier acción distinta de Mover recibe 1 Exposición (máximo 1 por turno). Con una acción Heroica puedes mover un Periodista a un Lugar adyacente (si sale de tu Lugar, te expones). Con 3 Exposiciones: 1 daño y tu próxima carta va boca abajo. En esta campaña la Exposición se arrastra entre capítulos.</p>
-      <h4>Reglas propias de la campaña</h4><p><b>Herido:</b> si pierden, cada héroe que quedó fuera de combate roba solo 2 cartas la próxima vez que juegue. <b>Pánico:</b> sube con las derrotas y baja con algunas decisiones; con 2-3 añade 1 Matón al preparar, con 4-5 además el villano empieza Acelerado. <b>Dificultad adaptativa:</b> tras una derrota baja un nivel; tras 2 victorias seguidas sube uno.</p></div>`;
-    return `<nav class="pestanas" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${pestanaArchivo === k}" class="${pestanaArchivo === k ? "on" : ""}" data-archivo="${k}">${n}</button>`).join("")}</nav>${cuerpo}`;
+      <h4>Identidad Secreta</h4><p>Un héroe en un Lugar con Periodista que hace cualquier acción distinta de Mover recibe 1 Exposición (máximo 1 por turno). Con una acción Heroica puedes mover un Periodista a un Lugar adyacente. Con 3 Exposiciones: 1 daño y tu próxima carta va boca abajo. En esta campaña la Exposición se arrastra entre capítulos, y una identidad revelada deja al héroe herido para su siguiente partida.</p></div>`;
+    return `<nav class="pestanas" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${pestana === k}" class="${pestana === k ? "on" : ""}" data-archivo="${k}">${n}</button>`).join("")}</nav>${cuerpo}`;
   }
 
   /* ---------- Vista: Campaña ---------- */
   let confirmarReinicio = false;
   function vistaCampana() {
     const ep = estadoPanico(E.panico);
-    const linea = CAPITULOS.map(c => {
-      const h = E.historia.find(x => x.cap === c.id);
-      const estado = h ? (h.gano ? "gano" : "perdio") : c.id === E.cap && E.fase !== "fin" ? "actual" : "futuro";
-      return `<li class="issue ${estado}"><img src="assets/char/${c.villano}.jpg" alt=""><span class="issue-n">#${c.id}</span>
-        <span class="issue-t">${esc(c.titulo)}</span>${h ? `<span class="sello">${h.gano ? "Victoria" : "Derrota"}</span>` : ""}</li>`;
-    }).join("");
-    const flags = [];
-    if (E.flags.eddie) flags.push(E.flags.eddie === "aliado" ? "Eddie Brock quedó libre bajo palabra." : "Eddie Brock fue enviado a Ravencroft.");
-    if (E.flags.kelly) flags.push(E.flags.kelly === "salvado" ? "El Senador Kelly sobrevivió y agradeció a un mutante." : "El Senador Kelly fue herido e impulsa el registro.");
-    if (E.flags.magneto) flags.push(E.flags.magneto === "aliado" ? "Magneto es su aliado." : "Rechazaron a Magneto.");
-    if (E.flags.osborn) flags.push(E.flags.osborn === "arrestado" ? "Osborn está preso." : "Osborn huyó sin poderes.");
+    const dec = [];
+    if (E.flags.eddie) dec.push(E.flags.eddie === "confianza" ? "Confiaron en Eddie Brock." : "Mandaron a Eddie Brock a Ravencroft.");
+    if (E.flags.evidencia) dec.push(E.flags.evidencia === "publica" ? "Le dieron a Jameson la prueba contra Osborn." : "Guardaron en secreto la prueba contra Osborn.");
+    if (E.flags.magneto) dec.push(E.flags.magneto === "aliado" ? "Aceptaron a Magneto como aliado." : "Rechazaron a Magneto.");
+    if (E.flags.sonico) dec.push(E.flags.sonico === "usar" ? "Decidieron usar el arma sónica." : "Decidieron no usar el arma sónica.");
     const exp = Object.entries(E.exposicion).filter(([, n]) => n > 0);
     return `
-    <section class="bloque">
-      <h3 class="titulo-sec">Pánico en Nueva York</h3>
-      <div class="panico" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${E.panico}">
-        ${[0, 1, 2, 3, 4, 5].map(i => `<span class="seg ${i <= E.panico ? "on" : ""} n${i}">${i}</span>`).join("")}</div>
-      <p class="nota"><b>${ep.nombre}.</b> ${ep.texto}</p>
-      <p class="nota">Ajuste de dificultad: ${E.ajuste > 0 ? "+1 (vienen ganando)" : E.ajuste < 0 ? "−1 (la alianza necesita aire)" : "ninguno"}. Medidor inicial de Carnage: ${clamp(E.carnage, 0, 3)}.</p>
-    </section>
-    <section class="bloque"><h3 class="titulo-sec">Los 10 números</h3><ol class="linea">${linea}</ol></section>
-    <section class="bloque"><h3 class="titulo-sec">Lo que decidieron</h3>${flags.length ? `<ul class="avisos">${flags.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : `<p class="nota">Todavía nada: las decisiones llegan en los capítulos 3 y 7.</p>`}
+    <section class="bloque"><h3 class="titulo-sec">Dificultad</h3>
+      <div class="opciones">${DIFICULTADES.map(d => `<button class="opcion ${E.dificultad === d.id ? "on" : ""}" data-dificultad="${d.id}" aria-pressed="${E.dificultad === d.id}"><b>${d.nombre}</b><span>${esc(d.texto)}</span></button>`).join("")}</div>
+      <p class="nota">Pueden cambiarla en cualquier momento; se aplica al preparar el próximo capítulo.</p></section>
+    <section class="bloque"><h3 class="titulo-sec">Pánico en Nueva York</h3>
+      <div class="panico" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${E.panico}">${[0, 1, 2, 3, 4, 5].map(i => `<span class="seg ${i <= E.panico ? "on" : ""} n${i}">${i}</span>`).join("")}</div>
+      <p class="nota"><b>${ep.nombre}.</b> ${ep.texto} Medidor inicial de Carnage en el final: ${clamp(E.carnage, 0, 3)}.</p></section>
+    <section class="bloque"><h3 class="titulo-sec">Lo que decidieron</h3>${dec.length ? `<ul class="avisos">${dec.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="nota">Todavía nada: las decisiones llegan al final de cada acto y antes del final.</p>`}
       ${E.heridos.length ? `<p class="nota"><b>Heridos:</b> ${E.heridos.map(h => esc(HEROES[h].nombre)).join(", ")}.</p>` : ""}
       ${exp.length ? `<p class="nota"><b>Exposición acumulada:</b> ${exp.map(([h, n]) => `${esc(HEROES[h].nombre)} ${n}/3`).join(", ")}.</p>` : ""}
-      ${E.publicos.length ? `<p class="nota"><b>Identidad pública:</b> ${E.publicos.map(h => esc(HEROES[h].nombre)).join(", ")}.</p>` : ""}
-    </section>
+      ${E.publicos.length ? `<p class="nota"><b>Identidad pública:</b> ${E.publicos.map(h => esc(HEROES[h].nombre)).join(", ")}.</p>` : ""}</section>
     <section class="bloque"><h3 class="titulo-sec">Jugadores</h3>
-      <div class="fila">
-        <label class="campo">Jugador 1<input id="nombre0" value="${esc(E.jugadores[0])}" maxlength="20"></label>
-        <label class="campo">Jugador 2<input id="nombre1" value="${esc(E.jugadores[1])}" maxlength="20"></label>
-      </div>
-    </section>
+      <div class="fila">${E.jugadores.map((j, i) => `<label class="campo">Jugador ${i + 1}<input id="nombre${i}" value="${esc(j)}" maxlength="20"></label>`).join("")}</div></section>
     <section class="bloque"><h3 class="titulo-sec">Respaldo</h3>
       <p class="nota">La campaña se guarda en este celular. Para pasarla a otro, exporta el archivo y luego impórtalo allá.</p>
-      <div class="fila"><button class="btn-sec" id="btnExportar">Exportar campaña</button>
-      <label class="btn-sec archivo-in">Importar campaña<input type="file" id="inImportar" accept="application/json"></label></div>
+      <div class="fila"><button class="btn-sec" id="btnExportar">Exportar campaña</button><label class="btn-sec archivo-in">Importar campaña<input type="file" id="inImportar" accept="application/json"></label></div>
       <p class="nota" id="msgRespaldo" role="status"></p>
-      ${confirmarReinicio ? `<div class="confirma"><p>Esto borra toda la campaña y vuelve al capítulo 1.</p><div class="fila"><button class="btn rojo" id="btnReinicioSi">Sí, empezar de cero</button><button class="btn-sec" id="btnReinicioNo">Cancelar</button></div></div>`
-        : `<button class="btn-sec peligro" id="btnReiniciar">Empezar la campaña de cero</button>`}
-    </section>`;
+      ${confirmarReinicio ? `<div class="confirma"><p>Esto borra toda la campaña y vuelve al primer capítulo.</p><div class="fila"><button class="btn rojo" id="btnReinicioSi">Sí, empezar de cero</button><button class="btn-sec" id="btnReinicioNo">Cancelar</button></div></div>`
+        : `<button class="btn-sec peligro" id="btnReiniciar">Empezar la campaña de cero</button>`}</section>`;
   }
 
   /* ---------- Acciones ---------- */
   function empezar() {
-    const c = cap(), equipo = equipoActual();
-    E.partida = {
-      cap: c.id, equipo, vidaMax: VILLANOS[c.villano].vida[equipo.length], vida: VILLANOS[c.villano].vida[equipo.length],
-      misiones: [false, false, false], exp: {}, crisis: {}, ko: {}, medidor: clamp(E.carnage, 0, 3), vistas: {}, confirmar: null
-    };
-    equipo.forEach(h => { if (c.identidad && !E.publicos.includes(h)) E.partida.exp[h] = E.exposicion[h] || 0; });
+    const c = cap(), equipo = equipoJugando();
+    E.partida = { nodo: E.nodo, equipo, exp: {}, ko: {}, pistas: null, confirmar: null, consumidos: { ayuda: E.ayuda, frenado: E.frenado, pendientes: E.pendientes.slice() } };
+    if (c.identidad) equipo.forEach(h => { if (!E.publicos.includes(h)) E.partida.exp[h] = E.exposicion[h] || 0; });
     E.heridos = E.heridos.filter(h => !equipo.includes(h));
-    E.pendientes = []; E.recompensa = null;
-    guardar(); ir("mesa");
-    abrirVineta("inicio");
+    E.ayuda = false; E.frenado = false; E.pendientes = [];
+    E.fase = "juego"; guardar(); ir("partida");
   }
-
-  function terminar(gano) {
-    const c = cap(), P = E.partida, out = gano ? c.victoria : c.derrota;
-    const avisos = [];
-    // Exposición acumulada
-    if (c.identidad) Object.entries(P.exp).forEach(([h, n]) => {
-      if (n >= 3) { E.publicos.push(h); E.exposicion[h] = 0; if (!E.heridos.includes(h)) E.heridos.push(h); avisos.push(`La identidad de ${HEROES[h].nombre} ya es pública. La prensa no lo deja en paz: la próxima vez que juegue estará herido.`); }
-      else E.exposicion[h] = n;
-    });
-    if (!gano) P.equipo.forEach(h => { if (P.ko[h] && !E.heridos.includes(h)) { E.heridos.push(h); avisos.push(`${HEROES[h].nombre} quedó herido: robará 2 cartas la próxima vez que juegue.`); } });
-    aplicarEfectos(out.efectos, avisos);
-    (out.pendientes || []).forEach(t => { E.pendientes.push({ de: `Capítulo ${c.id}`, texto: t }); avisos.push(`En el próximo capítulo: ${t}`); });
-    if (gano) { E.racha += 1; if (E.racha >= 2) { if (E.ajuste < 1) { E.ajuste += 1; avisos.push("Dos victorias seguidas: la dificultad sube un nivel."); } E.racha = 0; } }
-    else { E.racha = 0; if (E.ajuste > -1) { E.ajuste -= 1; avisos.push("La alianza necesita aire: la dificultad baja un nivel."); } }
-    E.historia.push({ cap: c.id, gano, equipo: P.equipo, resumen: out.resumen, fecha: new Date().toISOString() });
-    E.resultado = { cap: c.id, gano, avisos, recompensa: null, decision: null };
-    E.partida = null; E.fase = "resultado";
-    guardar(); ir("historia");
+  function abandonar() {
+    const P = E.partida;
+    if (P) { E.ayuda = P.consumidos.ayuda; E.frenado = P.consumidos.frenado; E.pendientes = P.consumidos.pendientes; }
+    E.partida = null; E.fase = "prep"; guardar(); ir("historia");
   }
 
   function aplicarEfectos(lista, avisos) {
     (lista || []).forEach(ef => {
-      if (ef.panico) { const antes = E.panico; E.panico = clamp(E.panico + ef.panico, 0, 5); if (E.panico !== antes) avisos.push(`El Pánico ${ef.panico > 0 ? "sube" : "baja"} a ${E.panico}.`); }
+      if (ef.panico) { const a = E.panico; E.panico = clamp(E.panico + ef.panico, 0, 5); if (E.panico !== a) avisos.push(`El Pánico en Nueva York ${ef.panico > 0 ? "sube" : "baja"} a ${E.panico}.`); }
       if (ef.flag) E.flags[ef.flag] = ef.valor;
-      if (ef.carnage) { E.carnage += ef.carnage; avisos.push(`El medidor de Carnage empezará en ${clamp(E.carnage, 0, 3)} en el final.`); }
-      if (ef.unlock) { desbloquear(E, [ef.unlock]); avisos.push(`${HEROES[ef.unlock].nombre} se une al equipo.`); }
-      if (ef.panicoSi && E.flags[ef.panicoSi.flag] === ef.panicoSi.valor) { E.panico = clamp(E.panico + ef.panicoSi.n, 0, 5); avisos.push(`El Pánico sube a ${E.panico}.`); }
+      if (ef.carnage) { E.carnage += ef.carnage; avisos.push(`Carnage se hace más fuerte: su medidor empezará en ${clamp(E.carnage, 0, 3)} en el final.`); }
+      if (ef.panicoSi && E.flags[ef.panicoSi.flag] === ef.panicoSi.valor) { E.panico = clamp(E.panico + ef.panicoSi.n, 0, 5); avisos.push(`El Pánico en Nueva York sube a ${E.panico}.`); }
     });
   }
 
-  function decidir(id) {
-    const R = E.resultado, c = CAPITULOS.find(x => x.id === R.cap);
-    if (R.decision) return;
-    const o = c.decision.opciones.find(x => x.id === id);
-    R.decision = id;
-    aplicarEfectos(o.efectos, R.avisos);
-    (o.pendientes || []).forEach(t => E.pendientes.push({ de: `Decisión del capítulo ${c.id}`, texto: t }));
-    E.historia[E.historia.length - 1].decision = o.nombre;
-    guardar(); render();
+  function terminar(gano) {
+    const c = cap(), P = E.partida, out = gano ? c.victoria : c.derrota, avisos = [];
+    P.equipo.forEach(h => {
+      const antes = nivelHeroe(h); E.xp[h] = (E.xp[h] || 0) + 1; const ahora = nivelHeroe(h);
+      if (ahora > antes) avisos.push(ahora === 2 ? `${HEROES[h].nombre} es Veterano: desde ahora empieza con 1 ficha ${HEROES[h].mejora.ficha} («${HEROES[h].mejora.nombre}»).` : `${HEROES[h].nombre} llega al nivel 3: además empieza con 1 Comodín.`);
+    });
+    if (c.identidad) Object.entries(P.exp).forEach(([h, n]) => {
+      if (n >= 3) { if (!E.publicos.includes(h)) E.publicos.push(h); E.exposicion[h] = 0; if (!E.heridos.includes(h)) E.heridos.push(h); avisos.push(`La identidad de ${HEROES[h].nombre} ya es pública. La prensa no lo deja en paz: la próxima vez que juegue estará herido.`); }
+      else E.exposicion[h] = n;
+    });
+    if (!gano) {
+      P.equipo.forEach(h => { if (P.ko[h] && !E.heridos.includes(h)) { E.heridos.push(h); avisos.push(`${HEROES[h].nombre} quedó herido: robará 2 cartas la próxima vez que juegue.`); } });
+      E.ayuda = true; avisos.push("La alianza se reagrupa: en el próximo capítulo cada héroe empieza con 1 Comodín.");
+    }
+    if (P.pistas === 2) {
+      if (c.final) E.flags.pistasFinal = true;
+      else { E.frenado = true; avisos.push(`Recogieron las dos pistas de «${c.pistas.titulo}»: el próximo villano empieza Frenado.`); }
+    }
+    aplicarEfectos(out.efectos, avisos);
+    E.historia.push({ nodo: E.nodo, gano, equipo: P.equipo, resumen: out.resumen, fecha: new Date().toISOString() });
+    E.resultado = { nodo: E.nodo, gano, avisos, siguiente: out.siguiente, trasDecision: out.siguienteTrasDecision || null };
+    E.partida = null; E.fase = "resultado"; guardar(); ir("historia");
   }
 
-  function seguir() {
-    const R = E.resultado, c = CAPITULOS.find(x => x.id === R.cap);
-    if (R.recompensa) E.recompensa = R.recompensa;
-    E.resultado = null; E.prep = null;
-    if (c.final) { E.fase = "fin"; guardar(); render(); return; }
-    E.cap = c.id + 1; E.fase = "prep";
-    const sig = cap();
-    desbloquear(E, sig.llegan);
-    if (sig.final && E.flags.eddie === "ravencroft") desbloquear(E, ["venom-hero"]);
+  function irA(destino, trasDecision) {
+    E.resultado = null; E.asignacion = null;
+    if (DECISIONES[destino]) { E.decision = { id: destino, elegida: null, trasDecision: trasDecision || null }; E.fase = "decision"; }
+    else { E.nodo = destino; E.fase = "prep"; }
     guardar(); render(); window.scrollTo(0, 0);
   }
-
-  /* ---------- Viñeta modal ---------- */
-  function abrirVineta(k) {
-    const c = cap(), b = c.viñetas[k];
-    const etiqueta = { inicio: "Comienza la partida", presion: "¡Bajo Presión!", segunda: "¡Segunda Misión!" }[k];
-    const regla = { inicio: "", presion: "El villano ahora juega Plan Maestro cada 2 cartas de héroe.", segunda: "Ya pueden dañar al villano." }[k];
-    $("#modal").innerHTML = `<div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="mTitulo">
-      <p class="sfx sfx-chico">${etiqueta}</p>
-      <h3 id="mTitulo">${esc(b.titulo)}</h3>
-      ${caption(esc(b.texto))}
-      ${b.efecto ? `<p class="efecto"><b>En la mesa:</b> ${esc(b.efecto)}</p>` : ""}
-      ${regla ? `<p class="nota">${regla}</p>` : ""}
-      <button class="btn" id="cerrarModal">Seguir jugando</button></div>`;
-    $("#modal").hidden = false;
-    $("#cerrarModal").focus();
+  function seguir() {
+    const R = E.resultado, c = cap(R.nodo);
+    if (c.final) {
+      if (R.gano) { E.resultado = null; E.fase = "fin"; guardar(); render(); window.scrollTo(0, 0); return; }
+      return irA("F");
+    }
+    irA(R.siguiente, R.trasDecision);
+  }
+  function decidir() {
+    const d = DECISIONES[E.decision.id], o = d.opciones.find(x => x.id === E.decision.elegida);
+    const avisos = [];
+    aplicarEfectos(o.efectos, avisos);
+    (o.pendientes || []).forEach(t => E.pendientes.push({ de: "La decisión", texto: t }));
+    const ult = E.historia[E.historia.length - 1]; if (ult) ult.decision = o.nombre;
+    const destino = o.siguiente || d.siguiente || E.decision.trasDecision;
+    E.decision = null; irA(destino);
   }
 
-  /* ---------- Navegación y render ---------- */
-  let vista = E.partida ? "mesa" : "historia";
+  /* ---------- Navegación ---------- */
+  const VISTAS = ["historia", "partida", "mapa", "archivo", "campana"];
+  const pedida = location.hash.slice(1);
+  let vista = VISTAS.includes(pedida) ? pedida : E.fase === "juego" ? "partida" : "historia";
   function ir(v) { vista = v; render(); window.scrollTo(0, 0); }
   function render() {
-    const vistas = { historia: vistaHistoria, mesa: vistaMesa, archivo: vistaArchivo, campana: vistaCampana };
+    const vistas = { historia: vistaHistoria, partida: vistaPartida, mapa: vistaMapa, archivo: vistaArchivo, campana: vistaCampana };
     $("#vista").innerHTML = vistas[vista]();
     document.querySelectorAll(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ir === vista ? "page" : "false"));
-    $("#capActual").textContent = E.fase === "fin" ? "Campaña terminada" : `Capítulo ${E.cap} de 10`;
+    const jugadas = E.historia.filter(h => h.nodo !== "F").length;
+    $("#capActual").textContent = E.fase === "fin" ? "Campaña terminada" : `Capítulo ${Math.min(jugadas + 1, 10)} de 10`;
   }
 
   document.addEventListener("click", ev => {
@@ -522,43 +446,31 @@
     if (!t) return;
     const d = t.dataset;
     if (d.ir) return ir(d.ir);
-    if (t.id === "cerrarModal") { $("#modal").hidden = true; return; }
-    if (d.sel) {
-      const p = prepActual();
-      if (d.sel === "1") p.equipo[1] = d.id; else p.tercero = d.id || null;
+    if (d.asignar) {
+      const mapa = asignacion(), h = d.asignar, j = Number(d.j);
+      if (j === -1) { if (Object.values(mapa).filter(x => x !== -1).length <= 2 && mapa[h] !== -1) return; mapa[h] = -1; }
+      else { const otro = Object.keys(mapa).find(k => k !== h && mapa[k] === j); if (otro) mapa[otro] = mapa[h]; mapa[h] = j; }
       guardar(); return render();
     }
-    if (t.id === "btnInvertir") { prepActual().invertir = !prepActual().invertir; guardar(); return render(); }
     if (t.id === "btnEmpezar") return empezar();
     const P = E.partida;
-    if (d.vida && P) { P.vida = clamp(P.vida + Number(d.vida), 0, P.vidaMax); guardar(); return render(); }
-    if (d.mision && P) {
-      const i = Number(d.mision); const antes = P.misiones.filter(Boolean).length;
-      P.misiones[i] = !P.misiones[i]; const ahora = P.misiones.filter(Boolean).length;
-      guardar(); render();
-      if (ahora > antes) {
-        if (ahora === 1 && !P.vistas.presion) { P.vistas.presion = true; guardar(); abrirVineta("presion"); }
-        else if (ahora === 2 && !P.vistas.segunda) { P.vistas.segunda = true; guardar(); abrirVineta("segunda"); }
-        else if (ahora === 3) { $("#modal").innerHTML = `<div class="modal-caja" role="dialog" aria-modal="true"><p class="sfx sfx-chico">¡Tercera Misión!</p><p class="efecto">Cada héroe roba 1 carta de su mazo.</p><button class="btn" id="cerrarModal">Seguir jugando</button></div>`; $("#modal").hidden = false; }
-      }
-      return;
-    }
-    if (d.vineta) return abrirVineta(d.vineta);
-    if (d.medidor && P) { P.medidor = Number(d.medidor); guardar(); return render(); }
-    if (d.cont && P) { const k = d.cont === "exp" ? "exp" : "crisis"; P[k][d.h] = Math.max(0, (P[k][d.h] || 0) + Number(d.d)); if (k === "exp") P.exp[d.h] = Math.min(3, P.exp[d.h]); guardar(); return render(); }
+    if (d.exp && P) { P.exp[d.exp] = clamp((P.exp[d.exp] || 0) + Number(d.d), 0, 3); guardar(); return render(); }
+    if (d.pistas && P) { P.pistas = Number(d.pistas); guardar(); return render(); }
     if (d.fin && P) { P.confirmar = d.fin; guardar(); return render(); }
     if (t.id === "btnCancelar" && P) { P.confirmar = null; guardar(); return render(); }
     if (t.id === "btnConfirmar" && P) return terminar(P.confirmar === "gano");
-    if (d.recompensa && E.resultado) { E.resultado.recompensa = d.recompensa; guardar(); return render(); }
-    if (d.decision) return decidir(d.decision);
+    if (t.id === "btnAbandonar") return abandonar();
     if (t.id === "btnSeguir") return seguir();
-    if (d.archivo) { pestanaArchivo = d.archivo; return render(); }
+    if (d.decision && E.decision) { E.decision.elegida = d.decision; guardar(); return render(); }
+    if (t.id === "btnDecidir" && E.decision && E.decision.elegida) return decidir();
+    if (d.archivo) { pestana = d.archivo; return render(); }
+    if (d.dificultad) { E.dificultad = d.dificultad; guardar(); return render(); }
     if (t.id === "btnReiniciar") { confirmarReinicio = true; return render(); }
     if (t.id === "btnReinicioNo") { confirmarReinicio = false; return render(); }
-    if (t.id === "btnReinicioSi") { confirmarReinicio = false; E = estadoInicial(); desbloquear(E, CAPITULOS[0].llegan); guardar(); return ir("historia"); }
+    if (t.id === "btnReinicioSi") { confirmarReinicio = false; const j = E.jugadores; E = estadoInicial(); E.jugadores = j; guardar(); return ir("historia"); }
     if (t.id === "btnExportar") {
       const blob = new Blob([JSON.stringify(E, null, 2)], { type: "application/json" });
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `telarana-mutante-cap${E.cap}.json`; a.click();
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `telarana-mutante-${E.nodo}.json`; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       $("#msgRespaldo").textContent = "Archivo descargado.";
     }
@@ -567,23 +479,21 @@
   document.addEventListener("change", ev => {
     const t = ev.target;
     if (t.dataset.ko && E.partida) { E.partida.ko[t.dataset.ko] = t.checked; guardar(); }
-    if (t.id === "nombre0" || t.id === "nombre1") { E.jugadores[Number(t.id.slice(-1))] = t.value.trim() || (t.id === "nombre0" ? "Jugador 1" : "Jugador 2"); guardar(); }
+    const m = t.id && t.id.match(/^nombre(\d)$/);
+    if (m) { E.jugadores[Number(m[1])] = t.value.trim() || `Jugador ${Number(m[1]) + 1}`; guardar(); }
     if (t.id === "inImportar" && t.files[0]) {
       const r = new FileReader();
       r.onload = () => {
         try {
           const s = JSON.parse(r.result);
-          if (!s || typeof s.cap !== "number" || !Array.isArray(s.historia)) throw new Error();
+          if (!s || s.v !== 2 || !CAPITULOS[s.nodo] || !Array.isArray(s.historia)) throw new Error();
           E = Object.assign(estadoInicial(), s); guardar(); ir("campana");
-          $("#msgRespaldo").textContent = `Campaña importada: capítulo ${E.cap}.`;
+          $("#msgRespaldo").textContent = "Campaña importada.";
         } catch (e) { $("#msgRespaldo").textContent = "Ese archivo no es una campaña de Telaraña Mutante. Elige el .json que exportaste."; }
       };
       r.readAsText(t.files[0]);
     }
   });
-
-  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !$("#modal").hidden) $("#modal").hidden = true; });
-  $("#modal").addEventListener("click", ev => { if (ev.target.id === "modal") $("#modal").hidden = true; });
 
   render();
   if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

@@ -57,7 +57,7 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 
 .nav {
   position: fixed; inset: auto 0 0 0; z-index: 30;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
   background: var(--tinta-2); border-top: 3px solid #000;
 }
@@ -319,3 +319,65 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- v2: cartas del capítulo ---------- */
+.inspiracion { margin: 12px 0 0; font-size: .85rem; color: var(--suave); max-width: 65ch; font-style: italic; }
+.inspiracion b { font-style: normal; color: var(--cian); }
+.cartas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.carta {
+  position: relative; padding: 16px 14px 14px; border: 3px solid #000; box-shadow: 5px 5px 0 #000; border-radius: 8px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.carta h4 { font: 800 1.3rem/1.05 var(--f-titulo); text-transform: uppercase; }
+.carta p { margin: 0; font-size: .95rem; }
+.carta ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.carta-tipo { align-self: flex-start; font: 400 1rem/1 var(--f-sfx); letter-spacing: .06em; padding: 4px 8px 3px; border: 2px solid #000; transform: rotate(-2deg); }
+.carta-evento { background: linear-gradient(160deg, #3a1420, var(--panel) 65%); }
+.carta-evento .carta-tipo { background: var(--rojo); color: #fff; }
+.carta-pistas { background: linear-gradient(160deg, #10304a, var(--panel) 65%); }
+.carta-pistas .carta-tipo { background: var(--caption); color: var(--caption-tinta); }
+.carta-regla { padding: 8px 10px; background: rgba(0, 0, 0, .3); border-left: 3px solid var(--caption); font-size: .88rem !important; color: var(--suave); }
+.pasos > li.paso-evento { border-left-color: var(--rojo); }
+.pasos > li.paso-pistas { border-left-color: var(--caption); }
+
+/* ---------- v2: leyenda del anillo ---------- */
+.leyenda { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.leyenda li { padding: 8px 10px; background: var(--tinta-2); border: 1px solid var(--linea); border-radius: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.leyenda li b { font: 700 .95rem/1.1 var(--f-titulo); text-transform: uppercase; letter-spacing: .03em; }
+.leyenda li > span:last-child { flex-basis: 100%; color: var(--suave); font-size: .88rem; }
+.chip-mini { font: 800 .62rem/1 var(--f-titulo); letter-spacing: .08em; text-transform: uppercase; padding: 3px 5px; border: 2px solid #000; border-radius: 4px; }
+.chip-mini.v { background: var(--rojo); color: #fff; }
+.chip-mini.h { background: var(--cian); color: #04131a; }
+.chip-mini.p { background: var(--caption); color: var(--caption-tinta); }
+
+/* ---------- v2: asignar jugadores ---------- */
+.asignar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.asignar .chip { padding: 7px 10px; font-size: .8rem; }
+.heroe-sel.fuera { opacity: .55; }
+.heroe-sel.fuera .retrato { filter: grayscale(1); }
+.mejora { padding: 8px 10px; background: rgba(87, 199, 236, .08); border-left: 3px solid var(--cian); border-radius: 4px; }
+
+/* ---------- v2: mapa de campaña ---------- */
+.acto-mapa.bloqueado { opacity: .55; }
+.hitos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; position: relative; }
+.hitos::before { content: ""; position: absolute; left: 39px; top: 10px; bottom: 10px; border-left: 3px dashed var(--linea); }
+.hito { position: relative; display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: center; padding: 10px; background: var(--panel); border: 3px solid #000; box-shadow: var(--sombra); min-width: 0; }
+.hito-arte { position: relative; width: 80px; aspect-ratio: 3 / 4; }
+.hito-arte img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #000; border-radius: 6px; }
+.hito-arte > span:only-child { display: grid; place-items: center; width: 100%; height: 100%; border: 3px dashed var(--linea); border-radius: 6px; font: 400 2.6rem/1 var(--f-sfx); color: var(--suave); }
+.hito .sello { top: 50%; font-size: .78rem; }
+.hito.gano .sello { color: var(--verde); }
+.hito.perdio .sello { color: var(--rojo); }
+.hito.actual { outline: 3px solid var(--caption); }
+.hito.actual .sello { color: var(--caption); }
+.hito.misterio { background: var(--tinta-2); box-shadow: none; border-style: dashed; border-color: var(--linea); }
+.hito-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hito-txt b { font: 800 1.1rem/1.05 var(--f-titulo); text-transform: uppercase; }
+.hito-txt > span { color: var(--suave); font-size: .88rem; }
+.mini-equipo { display: flex; gap: 4px; margin-top: 4px; }
+.mini-equipo img { width: 32px; height: 44px; object-fit: cover; border: 2px solid #000; border-radius: 4px; }
+.decidido { display: inline-block; margin-top: 4px; font: 700 .8rem/1.2 var(--f-titulo); color: var(--caption); }
+.decision-top { background: conic-gradient(from 0deg, rgba(87, 199, 236, .14) 0 10deg, transparent 10deg 20deg); }
+.nav button { font-size: .66rem; letter-spacing: .05em; }
+.heroe-sel-txt .chip-mal { align-self: flex-start; }
+.portada { background-position: 50% 22%; }
