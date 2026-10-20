@@ -19,3 +19,5 @@ Campaña narrativa de Marvel United para jugar en familia (2 o 3 héroes), usand
 «Bajo Presión» y «Acelerado» significan lo que dice el reglamento. Ningún efecto daña al villano antes de completar 2 Misiones. Cada villano usa su mecánica oficial: el Senador Kelly de Mystique, la Misión Usar Cerebro de Magneto, la ficha de Cazado de Sabretooth, el medidor de engendros de Carnage y la preparación especial del Duende Verde.
 
 Las imágenes salen de los PDF de las cajas. Funciona sin internet una vez instalada.
+
+Cada `git push` a `main` publica solo en Netlify y en GitHub Pages.
